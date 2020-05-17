@@ -2,17 +2,17 @@
 #include "SimpleFS.hpp"
 
 
-SimpleFS::SimpleFS(std::string & config) {
+SimpleFS::SimpleFS(std::string && config) {
 
 }
 
 
-int SimpleFS::create(std::string & name, int mode) {
+int SimpleFS::create(std::string && name, int mode) {
 
 }
 
 
-int SimpleFS::open(std::string & name, int mode) {
+int SimpleFS::open(std::string && name, int mode) {
 
 }
 
@@ -32,16 +32,16 @@ int SimpleFS::lseek(int fd, int whence, int offset) {
 }
 
 
-int SimpleFS::unlink(std::string & name) {
+int SimpleFS::unlink(std::string && name) {
 
 }
 
 
-int SimpleFS::mkdir(std::string & name) {
+int SimpleFS::mkdir(std::string && name) {
 
 }
 
 
-int SimpleFS::rmdir(std::string & name) {
+int SimpleFS::rmdir(std::string && name) {
 
 }

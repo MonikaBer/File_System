@@ -10,6 +10,6 @@ private:
 
 public:
     //methods declarations
-}
+};
 
 #endif

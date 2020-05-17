@@ -1,6 +1,7 @@
 //Class representing structure of directory
 #ifndef DIRECTORY_HPP
 #define DIRECTORY_HPP
+#include <map>
 
 class Directory {
 private:
@@ -8,6 +9,6 @@ private:
 
 public:
     //methods declarations
-}
+};
 
 #endif
