@@ -1,9 +1,16 @@
 //Main class of file system
 #include "SimpleFS.hpp"
+#include <fstream>
+#include "ConfigLoader.hpp"
 
-
-SimpleFS::SimpleFS(std::string && config) {
-
+SimpleFS::SimpleFS(std::string && configPath) {
+    ConfigLoader loader(configPath);
+    blocks_bitmap = loader.getBlocksBitmapPath();
+    inodes_bitmap = loader.getInodesBitmapPath();
+    inodes = loader.getInodesPath();
+    blocks = loader.getBlocksPath();
+    max_number_of_blocks = loader.getMaxNumberOfBlocks();
+    max_number_of_inodes = loader.getMaxNumberOfInodes();
 }
 
 

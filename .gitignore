@@ -33,3 +33,6 @@
 
 # Build paths
 build
+
+# Visual Studio Code
+.vscode

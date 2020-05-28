@@ -1,6 +1,6 @@
 #include "SimpleFS.hpp"
 
-static SimpleFS simpleFS = SimpleFS("/etc/simplefs");
+static SimpleFS simpleFS = SimpleFS("/etc/simplefs.config");
 
 extern "C" {
     int create(char * name, int mode) {

@@ -4,4 +4,4 @@ project(simplefs)
 
 set(CMAKE_CXX_STANDARD 14)
 
-ADD_LIBRARY( simplefs STATIC lib.cpp SimpleFS.cpp INode.cpp FileDescriptor.cpp Lock.cpp Directory.cpp )
+ADD_LIBRARY( simplefs STATIC lib.cpp SimpleFS.cpp INode.cpp FileDescriptor.cpp Lock.cpp Directory.cpp ConfigLoader.cpp )

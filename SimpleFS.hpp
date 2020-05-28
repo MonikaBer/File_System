@@ -22,7 +22,7 @@ private:
     std::vector<FileDescriptor*> fds;
 
 public:
-    SimpleFS(std::string && config);
+    SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
     int open(std::string && name, int mode);
     int read(int fd, char * buf, int len);
