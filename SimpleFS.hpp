@@ -21,6 +21,9 @@ private:
     std::vector<Lock> open_files;
     std::vector<FileDescriptor*> fds;
 
+    std::vector<std::string> parse_direct(std::string & path);
+    int find_free_inode();
+
 public:
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
