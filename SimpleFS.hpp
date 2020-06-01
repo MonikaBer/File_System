@@ -9,6 +9,8 @@
 
 class SimpleFS {
 private:
+    const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
+
     //files paths
     std::string blocks_bitmap;
     std::string inodes_bitmap;
@@ -23,7 +25,11 @@ private:
 
     std::vector<std::string> parse_direct(std::string & path);
     int find_free_inode();
+    int createBitmapFile(const std::string& path, int numberOfBits);
+    int createInodesFile(const std::string& path);
+    int createBlocksFile(const std::string& path);
 
+    inline bool fileExists (const std::string& name);
 public:
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
@@ -34,6 +40,7 @@ public:
     int unlink(std::string && name);
     int mkdir(std::string && name);
     int rmdir(std::string && name);
+    int createSystemFiles();
 };
 
 #endif

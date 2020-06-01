@@ -1,6 +1,7 @@
 //Main class of file system
-#include "SimpleFS.hpp"
 #include <fstream>
+#include <cmath>
+#include "SimpleFS.hpp"
 #include "ConfigLoader.hpp"
 
 SimpleFS::SimpleFS(std::string && configPath) {
@@ -28,7 +29,7 @@ int SimpleFS::create(std::string && name, int mode) {
 
 
 int SimpleFS::open(std::string && name, int mode) {
-    return -1;
+        return -1;
 }
 
 
@@ -96,4 +97,47 @@ int SimpleFS::find_free_inode() {
 
     input.close();
     return 8*free_inode_byte+id;
+}
+
+int SimpleFS::createSystemFiles() {
+    // blocks bitmap file
+    if(!fileExists(blocks_bitmap)) {
+        createBitmapFile(blocks_bitmap, max_number_of_blocks);
+    }
+    if(!fileExists(inodes_bitmap)) {
+        createBitmapFile(inodes_bitmap, max_number_of_inodes);
+    }
+    if(!fileExists(blocks)) {
+        createBlocksFile(blocks);
+    }
+    if(!fileExists(inodes)) {
+        createInodesFile(inodes);
+    }
+}
+
+inline bool SimpleFS::fileExists (const std::string& path) {
+    if (FILE *file = fopen(path.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int SimpleFS::createBitmapFile(const std::string &path, int numberOfBits) {
+    std::ofstream ofs(path, std::ios::binary | std::ios::out);
+    ofs.seekp(ceil(numberOfBits/8.0) - 1);
+    ofs.write("", 1);
+}
+
+int SimpleFS::createInodesFile(const std::string &path) {
+    std::ofstream ofs(path, std::ios::binary | std::ios::out);
+    ofs.seekp(max_number_of_inodes*sizeofInode - 1);
+    ofs.write("", 1);
+}
+
+int SimpleFS::createBlocksFile(const std::string &path) {
+    std::ofstream ofs(path, std::ios::binary | std::ios::out);
+    ofs.seekp(max_number_of_blocks*4096 - 1);
+    ofs.write("", 1);
 }

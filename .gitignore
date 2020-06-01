@@ -36,3 +36,8 @@ build
 
 # Visual Studio Code
 .vscode
+
+# Kacper's clion artifacts
+cmake-build-debug
+.idea
+*.swp
