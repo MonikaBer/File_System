@@ -6,18 +6,19 @@
 
 #include "Lock.hpp"
 #include "FileDescriptor.hpp"
+#include "INode.hpp"
 
 class SimpleFS {
 private:
-    const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
+    const static int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
 
     //files paths
     std::string blocks_bitmap;
     std::string inodes_bitmap;
-    std::string inodes; 
+    std::string inodes;
     std::string blocks;
-        
-    int max_number_of_blocks; 
+
+    int max_number_of_blocks;
     int max_number_of_inodes;
 
     std::vector<Lock> open_files;
@@ -28,8 +29,11 @@ private:
     int createBitmapFile(const std::string& path, int numberOfBits);
     int createInodesFile(const std::string& path);
     int createBlocksFile(const std::string& path);
-
     inline bool fileExists (const std::string& name);
+
+    int writeInode(FileDescriptor& fd, INode& inode);
+    int readInode(FileDescriptor& fd, INode& inode);
+
 public:
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);

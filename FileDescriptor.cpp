@@ -3,3 +3,6 @@
 
 
 //methods definitions
+int FileDescriptor::getInodeId() const {
+    return inode_id;
+}

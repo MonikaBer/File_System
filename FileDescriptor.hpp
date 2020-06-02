@@ -10,6 +10,8 @@ private:
 
 public:
     //methods declarations
+    int getInodeId() const;
+
 };
 
 #endif
