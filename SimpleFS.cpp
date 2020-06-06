@@ -99,7 +99,18 @@ int SimpleFS::find_free_inode() {
     return 8*free_inode_byte+id;
 }
 
+/**
+ * Checks for existence of 4 essential files and creates them if they don't exist.
+ *
+ * WARNING: losing inodes/blocks file renders whole filesystem useless. Creating empty files is only reasonable if
+ * filesystem is being created!
+ *
+ * @return
+ */
 int SimpleFS::createSystemFiles() {
+    // TODO name is kinda unfortunate - not always creates, only when needed.
+    // TODO creating single file is pointless - losing blocks/inodes renders whole filesystem
+    // TODO lost bitmaps could be rebuilt if freed block/inode would have its data overwritten with zeroes
     // blocks bitmap file
     if(!fileExists(blocks_bitmap)) {
         createBitmapFile(blocks_bitmap, max_number_of_blocks);
@@ -114,33 +125,60 @@ int SimpleFS::createSystemFiles() {
         createInodesFile(inodes);
     }
 
-    // TODO return errors
+    // TODO return errors ( + doc)
 }
 
+/**
+ * Creates empty file big enough to hold all bits.
+ * Can be used to create both INodes and Blocks bitmaps.
+ *
+ * @param path - path where file will be created
+ * @param numberOfBits - number of bit that will be used
+ * @return
+ */
 int SimpleFS::createBitmapFile(const std::string &path, int numberOfBits) {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(ceil(numberOfBits/8.0) - 1);
     ofs.write("", 1);
 
-    // TODO return errors
+    // TODO return errors ( + doc)
 }
 
+/**
+ * Creates empty file big enough to hold all INodes of SimpleFS.
+ *
+ * @param path - path where file will be created
+ * @return
+ */
 int SimpleFS::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(max_number_of_inodes*sizeofInode - 1);
     ofs.write("", 1);
 
-    // TODO return errors
+    // TODO return errors ( + doc)
 }
 
+/**
+ * Creates empty file big enough to hold all blocks of SimpleFS.
+ *
+ * @param path - path where file will be created
+ * @return
+ */
 int SimpleFS::createBlocksFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(max_number_of_blocks*4096 - 1);
     ofs.write("", 1);
 
-    // TODO return errors
+    // TODO return errors ( + doc)
 }
 
+/**
+ * Checks for existence of file in host filesystem.
+ *
+ * @param path - path to file
+ * @return true - file exists
+ * @return false - file does not exist
+ */
 inline bool SimpleFS::fileExists (const std::string& path) {
     if (FILE *file = fopen(path.c_str(), "r")) {
         fclose(file);
@@ -150,6 +188,13 @@ inline bool SimpleFS::fileExists (const std::string& path) {
     }
 }
 
+/**
+ * Saves INode to file and sets bit in bitmap to inform that INode is in use.
+ *
+ * @param fd - file descriptor holding INode number of file to save
+ * @param inode - object to save
+ * @return
+ */
 int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
     std::ofstream ofs(inodes, std::ios::binary | std::ios::in); // ios::in is needed to avoid overwriting whole file!
     ofs.seekp(fd.getInodeId()*sizeofInode);
@@ -166,14 +211,40 @@ int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
     bitmapfs.seekp(fd.getInodeId()/8);
     bitmapfs.write(&byte, 1);
 
-    // TODO return errors
+    // TODO return errors ( + doc)
 }
 
+/**
+ * Reads INode into inode.
+ *
+ * @param fd - file descriptor holding INode number of file to read
+ * @param inode - object to read INode into
+ * @return
+ */
 int SimpleFS::readInode(FileDescriptor &fd, INode &inode) {
     std::ifstream ifs(inodes, std::ios::binary);
     ifs.seekg(fd.getInodeId()*sizeofInode);
     ifs >> inode;
 
-    // TODO return errors
+    // TODO return errors ( + doc)
+}
+
+/**
+ * Clears INode by clearing corresponding bit in bitmap. Data is not cleared.
+ *
+ * @param fd - file descriptor holding INode number of file to delete
+ * @return 
+ */
+int SimpleFS::clearInode(FileDescriptor &fd) {
+    std::fstream bitmapfs(inodes_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    bitmapfs.seekg(fd.getInodeId()/8);
+    char byte;
+    bitmapfs.read(&byte, 1);
+    std::cout << "Read byte: " << int(byte) << std::endl;
+    byte &= ~(1 << (fd.getInodeId()%8));
+    bitmapfs.seekp(fd.getInodeId()/8);
+    bitmapfs.write(&byte, 1);
+    
+    // TODO return errors ( + doc)
 }
 

@@ -35,7 +35,7 @@ public:
     // TODO public only for testing:
     int writeInode(FileDescriptor& fd, INode& inode);
     int readInode(FileDescriptor& fd, INode& inode);
-
+    int clearInode(FileDescriptor&fd);
 
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
