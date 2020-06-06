@@ -1,6 +1,8 @@
 //Main class of file system
 #ifndef SIMPLE_FS_HPP
 #define SIMPLE_FS_HPP
+static const int blockSize = 4096;
+
 #include <string>
 #include <vector>
 
