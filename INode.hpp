@@ -18,9 +18,10 @@ private:
     friend std::ostream& operator<<(std::ostream& os, const INode& en);
 public:
     //methods declarations
-    INode() {}
+    INode() = default;
     INode(unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);
     int addBlock(unsigned block);
+    int removeBlock(unsigned block);
 };
 
 #endif

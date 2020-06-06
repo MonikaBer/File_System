@@ -4,13 +4,15 @@
 
 class FileDescriptor {
 private:
-    int inode_id;
+    unsigned int inode_id;
     int file_cursor;
     unsigned int type;
 
 public:
     //methods declarations
-    int getInodeId() const;
+    FileDescriptor() = default;
+    FileDescriptor(unsigned int inodeId, unsigned int type) : inode_id(inodeId), type(type) {}
+    unsigned int getInodeId() const;
 
 };
 

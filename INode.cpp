@@ -34,3 +34,14 @@ int INode::addBlock(unsigned int block) {
     *it = block;
     return 0;
 }
+
+int INode::removeBlock(unsigned int block) {
+    auto it = std::remove(blocks.begin(), blocks.end(), block);
+    if (it == blocks.end())
+        // TODO implement adding more than 12 blocks
+        return -123;
+    else {
+        *it = 0;    // will not work if std::removes removes more than one value, but that means inode was corrupted
+    }
+    return 0;
+}

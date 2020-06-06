@@ -113,24 +113,32 @@ int SimpleFS::createSystemFiles() {
     if(!fileExists(inodes)) {
         createInodesFile(inodes);
     }
+
+    // TODO return errors
 }
 
 int SimpleFS::createBitmapFile(const std::string &path, int numberOfBits) {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(ceil(numberOfBits/8.0) - 1);
     ofs.write("", 1);
+
+    // TODO return errors
 }
 
-int SimpleFS::createInodesFile(const std::string &path) {
+int SimpleFS::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(max_number_of_inodes*sizeofInode - 1);
     ofs.write("", 1);
+
+    // TODO return errors
 }
 
-int SimpleFS::createBlocksFile(const std::string &path) {
+int SimpleFS::createBlocksFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     ofs.seekp(max_number_of_blocks*4096 - 1);
     ofs.write("", 1);
+
+    // TODO return errors
 }
 
 inline bool SimpleFS::fileExists (const std::string& path) {
@@ -143,14 +151,29 @@ inline bool SimpleFS::fileExists (const std::string& path) {
 }
 
 int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
-    std::ofstream ofs(inodes, std::ios::binary);
+    std::ofstream ofs(inodes, std::ios::binary | std::ios::in); // ios::in is needed to avoid overwriting whole file!
     ofs.seekp(fd.getInodeId()*sizeofInode);
     ofs << inode;
+
+    // update bitmap
+    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
+    std::fstream bitmapfs(inodes_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    bitmapfs.seekg(fd.getInodeId()/8);
+    char byte;
+    bitmapfs.read(&byte, 1);
+    std::cout << "Read byte: " << int(byte) << std::endl;
+    byte |= 1 << (fd.getInodeId()%8);
+    bitmapfs.seekp(fd.getInodeId()/8);
+    bitmapfs.write(&byte, 1);
+
+    // TODO return errors
 }
 
 int SimpleFS::readInode(FileDescriptor &fd, INode &inode) {
     std::ifstream ifs(inodes, std::ios::binary);
     ifs.seekg(fd.getInodeId()*sizeofInode);
     ifs >> inode;
+
+    // TODO return errors
 }
 

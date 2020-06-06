@@ -26,15 +26,17 @@ private:
 
     std::vector<std::string> parse_direct(std::string & path);
     int find_free_inode();
-    int createBitmapFile(const std::string& path, int numberOfBits);
-    int createInodesFile(const std::string& path);
-    int createBlocksFile(const std::string& path);
-    inline bool fileExists (const std::string& name);
+    static int createBitmapFile(const std::string& path, int numberOfBits);
+    int createInodesFile(const std::string& path) const;
+    int createBlocksFile(const std::string& path) const;
+    static inline bool fileExists (const std::string& name);
 
+public:
+    // TODO public only for testing:
     int writeInode(FileDescriptor& fd, INode& inode);
     int readInode(FileDescriptor& fd, INode& inode);
 
-public:
+
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
     int open(std::string && name, int mode);
