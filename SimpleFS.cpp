@@ -201,6 +201,8 @@ int SimpleFS::createSystemFiles() {
  */
 int SimpleFS::createBitmapFile(const std::string &path, int numberOfBits) {
     std::ofstream ofs(path, std::ios::binary);
+    char reserved = 1;
+    ofs.write(&reserved, 1);        // reserve bit [0] for root
     ofs.seekp(ceil(numberOfBits/8.0) - 1);
     ofs.write("", 1);
 
@@ -269,7 +271,6 @@ int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
     bitmapfs.seekg(fd.getInodeId()/8);
     char byte;
     bitmapfs.read(&byte, 1);
-    std::cout << "Read byte: " << int(byte) << std::endl;
     byte |= 1 << (fd.getInodeId()%8);
     bitmapfs.seekp(fd.getInodeId()/8);
     bitmapfs.write(&byte, 1);
@@ -303,7 +304,6 @@ int SimpleFS::clearInode(FileDescriptor &fd) {
     bitmapfs.seekg(fd.getInodeId()/8);
     char byte;
     bitmapfs.read(&byte, 1);
-    std::cout << "Read byte: " << int(byte) << std::endl;
     byte &= ~(1 << (fd.getInodeId()%8));
     bitmapfs.seekp(fd.getInodeId()/8);
     bitmapfs.write(&byte, 1);
@@ -311,3 +311,58 @@ int SimpleFS::clearInode(FileDescriptor &fd) {
     // TODO return errors ( + doc)
 }
 
+/**
+ * Allows to take ownership of unowned block.
+ *
+ * @return 0 - no free blocks found
+ * @return positive number - block number
+ */
+unsigned SimpleFS::getFreeBlock() {
+    std::fstream bitmapfs(blocks_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    unsigned block = 0;
+    unsigned char byte;
+    bool looking = true;
+
+    while (looking) {
+        bitmapfs.read((char*)&byte, 1);
+        if (bitmapfs.eof())
+            return 0;
+        if (byte == 255) {    // all blocks taken
+            block += 8;
+            continue;
+        }
+        for (int i = 0; i < 8; i++) {
+            if ( ((byte >> i) & 0x1) == 0) {
+                looking = false;
+                break;
+            }
+            block++;
+        }
+    }
+    byte |= 1 << (block%8);
+    long pos = bitmapfs.tellg();
+    bitmapfs.seekp(pos - 1);
+    bitmapfs.write((char*)&byte, 1);
+    return block;
+}
+
+/**
+ * Allows to renounce ownership of block
+ *
+ * WARNING: data is not erased!
+ *
+ * @param block - block number
+ * @return
+ */
+int SimpleFS::freeBlock(unsigned int block) {
+    // TODO in any way doesnt check who is the owner of this block! - should it be changed?
+    // TODO should data be cleared?
+    // TODO return values + doc
+    std::fstream bitmapfs(blocks_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    bitmapfs.seekg(block/8);
+    char byte;
+    bitmapfs.read(&byte, 1);
+    byte &= ~(1 << (block%8));
+    bitmapfs.seekp(block/8);
+    bitmapfs.write(&byte, 1);
+}

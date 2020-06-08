@@ -38,6 +38,8 @@ public:
     int writeInode(FileDescriptor& fd, INode& inode);
     int readInode(FileDescriptor& fd, INode& inode);
     int clearInode(FileDescriptor&fd);
+    unsigned getFreeBlock();
+    int freeBlock(unsigned block);
 
     SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);

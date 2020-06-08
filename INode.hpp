@@ -9,10 +9,10 @@ private:
     const static unsigned maxBlocksNo = 12;
 
     unsigned short mode;
-    long length;
-    unsigned number_of_blocks;
+    long length = 0;
+    unsigned number_of_blocks = 0;
     std::array<unsigned, maxBlocksNo> blocks = {0};
-    unsigned indirect_block;
+    unsigned indirect_block = 0;
 
     friend std::istream& operator>>(std::istream& is, INode& en);
     friend std::ostream& operator<<(std::ostream& os, const INode& en);
