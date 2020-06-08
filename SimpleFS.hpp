@@ -5,14 +5,29 @@ static const int blockSize = 4096;
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Lock.hpp"
 #include "FileDescriptor.hpp"
 #include "INode.hpp"
 
+
 class SimpleFS {
 private:
     const static int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
+
+    // TODO implement shared filedescriptors!
+    //    enum fdNames {BLOCKS_BITMAP, INODES_BITMAP, INODES, BLOCKS};
+//    static int hostFd[4];
+//    // ALBO
+//    std::map<std::string, int> fdTable =
+//            // mapa będzie wypełniona w konstruktorze podczas otwierania plików ale to będzie coś w tym stylu
+//            {
+//                    {"inodes", 3},
+//                    {"inodesBitmap", 4},
+//                    {"blocks", 5},
+//                    {"blocksBitmap", 6}
+//            };
 
     //files paths
     std::string blocks_bitmap;

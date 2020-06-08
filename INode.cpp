@@ -28,10 +28,18 @@ INode::INode(unsigned short mode, long length, unsigned int numberOfBlocks, unsi
 
 int INode::addBlock(unsigned int block) {
     auto it = std::find(blocks.begin(), blocks.end(), 0);
-    if (it == blocks.end())
+    if (it == blocks.end()) {
         // TODO implement adding more than 12 blocks
+        if (indirect_block == 0) {
+            // TODO get block for your use
+        } else {
+            // TODO HOW DO I READ FROM FILES??? std::fstream blocks(blocks, std::ios::binary | std::ios::in | std::ios::out);
+        }
         return -123;
-    *it = block;
+    }
+    else {
+        *it = block;
+    }
     return 0;
 }
 
@@ -43,5 +51,10 @@ int INode::removeBlock(unsigned int block) {
     else {
         *it = 0;    // will not work if std::removes removes more than one value, but that means inode was corrupted
     }
+    return 0;
+}
+
+int INode::freeAllBlocks() {
+    // TODO Implement
     return 0;
 }

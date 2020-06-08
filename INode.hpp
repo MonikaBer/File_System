@@ -17,6 +17,9 @@ private:
     friend std::istream& operator>>(std::istream& is, INode& en);
     friend std::ostream& operator<<(std::ostream& os, const INode& en);
 public:
+    // TODO public for testing
+    int freeAllBlocks();
+
     //methods declarations
     INode() = default;
     INode(unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);

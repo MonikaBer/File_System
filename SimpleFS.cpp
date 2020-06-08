@@ -112,6 +112,10 @@ int SimpleFS::lseek(int fd, int whence, int offset) {
 
 
 int SimpleFS::unlink(std::string && name) {
+    // TODO implementation not finished
+    // TODO need some way to access inode
+
+
     return -1;
 }
 
@@ -358,6 +362,10 @@ int SimpleFS::freeBlock(unsigned int block) {
     // TODO in any way doesnt check who is the owner of this block! - should it be changed?
     // TODO should data be cleared?
     // TODO return values + doc
+    if (block == 0) {   // never free root block!
+        return -1;
+    }
+
     std::fstream bitmapfs(blocks_bitmap, std::ios::binary | std::ios::in | std::ios::out);
     bitmapfs.seekg(block/8);
     char byte;
@@ -366,3 +374,5 @@ int SimpleFS::freeBlock(unsigned int block) {
     bitmapfs.seekp(block/8);
     bitmapfs.write(&byte, 1);
 }
+
+// TODO iNode in indirect block expects value 0 to find its end! either add blockscount, clear block after freeing or clear next 4 bytes after assinging new block
