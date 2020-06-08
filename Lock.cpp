@@ -1,5 +1,6 @@
-//Class representing structure of file lock
 #include "Lock.hpp"
 
-
-//methods definitions
+Lock::Lock(Type type, unsigned int inodeId) {
+    this->type = type;
+    this->inode_id = inodeId;
+}

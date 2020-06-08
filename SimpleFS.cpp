@@ -6,12 +6,12 @@
 
 SimpleFS::SimpleFS(std::string && configPath) {
     ConfigLoader loader(configPath);
-    blocks_bitmap = loader.getBlocksBitmapPath();
-    inodes_bitmap = loader.getInodesBitmapPath();
+    blocksBitmap = loader.getBlocksBitmapPath();
+    inodesBitmap = loader.getInodesBitmapPath();
     inodes = loader.getInodesPath();
     blocks = loader.getBlocksPath();
-    max_number_of_blocks = loader.getMaxNumberOfBlocks();
-    max_number_of_inodes = loader.getMaxNumberOfInodes();
+    maxNumberOfBlocks = loader.getMaxNumberOfBlocks();
+    maxNumberOfInodes = loader.getMaxNumberOfInodes();
 }
 
 
@@ -129,23 +129,31 @@ int SimpleFS::rmdir(std::string && name) {
     return -1;
 }
 
-std::vector<std::string> SimpleFS::parse_direct(std::string & path) {
+int SimpleFS::getTargetDirectoryINode(const std::string& path) {
+    std::vector<std::string> parsedPath = parseDirect(path);
+    unsigned currentDirectoryInode = 0;
+    openInodes.emplace_back(Lock::Type::RD_LOCK, currentDirectoryInode);
+    for(auto fileName = parsedPath.begin(); fileName != parsedPath.end()-1; fileName++){
+
+    }
+}
+
+std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
+    if(path.empty() || path[0] != '/')
+        return {};
     std::vector<std::string> parsed_path;
-    if(!path.empty() && path[0] == '/') {
-        std::string path_element;
-        for (auto a = path.begin() + 1; a != path.end(); ++a) {
-            if (*a == '/' or a == path.end() - 1) {
-                parsed_path.push_back(path_element);
-                path_element.clear();
-            } else {
-                path_element.push_back(*a);
-            }
-        }
+    std::string path_element;
+    for (auto a = path.begin() + 1; a != path.end(); ++a) {
+        if (*a == '/' or a == path.end() - 1) {
+            parsed_path.push_back(path_element);
+            path_element.clear();
+        } else
+            path_element.push_back(*a);
     }
     return parsed_path;
 }
 
-int SimpleFS::find_free_inode() {
+int SimpleFS::findFreeInode() {
     std::ifstream input(inodes_bitmap);
     if(!input.is_open())
         throw std::runtime_error("Couldn't open inodes bitmap file.");

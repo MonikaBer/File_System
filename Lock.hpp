@@ -3,12 +3,13 @@
 #define LOCK_HPP
 
 class Lock {
-private:
-    int inode_id;
-    unsigned int type;
-
 public:
-    //methods declarations
+    enum Type {RD_LOCK, WR_LOCK};
+private:
+    unsigned inode_id;
+    Type type;
+public:
+    Lock(Type type, unsigned inodeId);
 };
 
 #endif
