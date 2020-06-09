@@ -23,8 +23,8 @@ private:
     std::array<unsigned, maxBlocksNo> blocks = {0};
     unsigned indirect_block = 0;
 
-    friend std::istream& operator>>(std::istream& is, INode& en);
-    friend std::ostream& operator<<(std::ostream& os, const INode& en);
+    friend std::istream& operator>>(std::istream& is, std::shared_ptr<INode> & en);
+    friend std::ostream& operator<<(std::ostream& os, const std::shared_ptr<INode> & en);
 public:
     // TODO public for testing
     int freeAllBlocks();
@@ -39,6 +39,7 @@ public:
 
     std::map<std::string, unsigned> getDirectoryContent();
     std::vector<char> getContent();
+
 };
 
 #endif

@@ -5,21 +5,21 @@
 
 
 //methods definitions
-std::istream & operator>>(std::istream &is, INode &iNode) {
-    is.read((char*)&iNode.mode, sizeof(iNode.mode));
-    is.read((char*)&iNode.length, sizeof(iNode.length));
-    is.read((char*)&iNode.number_of_blocks, sizeof(iNode.number_of_blocks));
-    is.read((char*)iNode.blocks.data(), sizeof(iNode.blocks));
-    is.read((char*)&iNode.indirect_block, sizeof(iNode.indirect_block));
+std::istream& operator>>(std::istream &is, std::shared_ptr<INode> & iNode) {
+    is.read((char*)&iNode->mode, sizeof(iNode->mode));
+    is.read((char*)&iNode->length, sizeof(iNode->length));
+    is.read((char*)&iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
+    is.read((char*)iNode->blocks.data(), sizeof(iNode->blocks));
+    is.read((char*)&iNode->indirect_block, sizeof(iNode->indirect_block));
     return is;
 }
 
-std::ostream & operator<<(std::ostream &os, const INode &iNode) {
-    os.write((char*)&iNode.mode, sizeof(iNode.mode));
-    os.write((char*)&iNode.length, sizeof(iNode.length));
-    os.write((char*)&iNode.number_of_blocks, sizeof(iNode.number_of_blocks));
-    os.write((char*)iNode.blocks.data(), sizeof(iNode.blocks));
-    os.write((char*)&iNode.indirect_block, sizeof(iNode.indirect_block));
+std::ostream & operator<<(std::ostream &os, const std::shared_ptr<INode> &iNode) {
+    os.write((char*)&iNode->mode, sizeof(iNode->mode));
+    os.write((char*)&iNode->length, sizeof(iNode->length));
+    os.write((char*)&iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
+    os.write((char*)iNode->blocks.data(), sizeof(iNode->blocks));
+    os.write((char*)&iNode->indirect_block, sizeof(iNode->indirect_block));
     return os;
 }
 
