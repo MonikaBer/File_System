@@ -2,21 +2,25 @@
 #ifndef FILE_DESCRIPTOR_HPP
 #define FILE_DESCRIPTOR_HPP
 
+#include <memory>
+#include "INode.hpp"
+#include "Lock.hpp"
+
 class FileDescriptor {
 private:
-    unsigned int inode_id;
-    long file_cursor;
-    unsigned int type;  // TODO kinda unfortunate name - seems like file/directory, but instead is type of lock!
+    std::shared_ptr<INode> inode;
+    long fileCursor;
+    Lock::Type lockType;
 
 public:
     //methods declarations
     FileDescriptor() = default;
-    FileDescriptor(unsigned int inodeId, unsigned int type) : inode_id(inodeId), type(type), file_cursor(0) {}
+    FileDescriptor(std::shared_ptr<INode> inode, Lock::Type type) : inode(inode), lockType(type), fileCursor(0) {}
 
-    unsigned int getInodeId() const { return inode_id; }
-    long getFileCursor() const { return file_cursor; }
-    unsigned int getType() const { return type; }
-    void setFileCursor(long fileCursor) { file_cursor = fileCursor; }
+    std::shared_ptr<INode> getInode() { return inode; }
+    long getFileCursor() const { return fileCursor; }
+    Lock::Type getLockType() const { return lockType; }
+    void setFileCursor(long fileCursor) { this->fileCursor = fileCursor; }
 };
 
 #endif
