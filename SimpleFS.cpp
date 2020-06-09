@@ -182,7 +182,7 @@ int SimpleFS::findFreeInode() {
 //int SimpleFS::writeInode(FileDescriptor &fd) {
 //    ConfigLoader* loader = ConfigLoader::getInstance();
 //    std::fstream &ofs = loader->getInodes();
-//    //ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
+//    ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
 //    ofs << fd.getInode();
 //
 //    // update bitmap

@@ -12,7 +12,7 @@ class ConfigLoader {
 
     enum FdNames {BLOCKS_BITMAP=0, INODES_BITMAP=1, INODES=2, BLOCKS=3};
     static std::fstream hostStreams[4];
-
+    static int hostFd[4];
 
     static const int sizeOfBlock = 4096;
 

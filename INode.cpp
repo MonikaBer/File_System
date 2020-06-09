@@ -5,27 +5,37 @@
 
 
 //methods definitions
-std::fstream& operator>>(std::fstream &is, std::shared_ptr<INode> iNode) {
-    is.read((char*)iNode->mode, sizeof(iNode->mode));
-    is.read((char*)iNode->length, sizeof(iNode->length));
-    is.read((char*)iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
-    is.read((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    is.read((char*)iNode->indirect_block, sizeof(iNode->indirect_block));
-    return is;
+std::fstream& operator>>(std::fstream &inodes, std::shared_ptr<INode> iNode) {
+    inodes.read((char*)&(iNode->mode), sizeof(iNode->mode));
+    inodes.read((char*)&(iNode->length), sizeof(iNode->length));
+    inodes.read((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
+    inodes.read((char*)iNode->blocks.data(), sizeof(iNode->blocks));
+    inodes.read((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
+    return inodes;
 }
 
-std::fstream & operator<<(std::fstream &os, const std::shared_ptr<INode> iNode) {
-//    std::array<char, sizeofInode
-    os.write((char*)iNode->mode, sizeof(iNode->mode));
-    os.write((char*)iNode->length, sizeof(iNode->length));
-    os.write((char*)iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
-    os.write((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    os.write((char*)iNode->indirect_block, sizeof(iNode->indirect_block));
-    return os;
+std::fstream & operator<<(std::fstream &inodes, const std::shared_ptr<INode> iNode) {
+    inodes.write((char*)&(iNode->mode), sizeof(iNode->mode));
+    inodes.write((char*)&(iNode->length), sizeof(iNode->length));
+    inodes.write((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
+    inodes.write((char*)iNode->blocks.data(), sizeof(iNode->blocks));
+    inodes.write((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
+    return inodes;
 }
 
 INode::INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock)
                 : inode_id(id), mode(mode), length(length), number_of_blocks(numberOfBlocks), indirect_block(indirectBlock) {}
+
+INode::INode(unsigned id): inode_id(id) {
+    ConfigLoader * config = ConfigLoader::getInstance();
+    std::fstream & inodes = config->getInodes();
+    unsigned int inode_position = id * sizeofInode;
+    inodes.seekg(0, std::ios::end);
+    if(inodes.tellg() < inode_position + sizeofInode)
+        throw std::runtime_error("inode doesnt exist");
+    inodes.seekg(inode_position);
+    inodes >> std::shared_ptr<INode>(this);
+}
 
 int INode::addBlock(unsigned int block) {
     auto it = std::find(blocks.begin(), blocks.end(), 0);
@@ -106,17 +116,6 @@ std::vector<char> INode::getContent() {
 
 unsigned int INode::getId() const {
     return inode_id;
-}
-
-INode::INode(unsigned id): inode_id(id) {
-    ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & inodes = config->getInodes();
-    unsigned int inode_positon = id * sizeofInode;
-    inodes.seekg(0, std::ios::end);
-    if(inodes.tellg() < inode_positon + sizeofInode)
-        throw std::runtime_error("inode doesnt exist");
-    inodes.seekg(inode_positon);
-    inodes >> std::shared_ptr<INode>(this);
 }
 
 void INode::save(INode newFileInode) {

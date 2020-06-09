@@ -15,7 +15,6 @@ private:
 
 public:
     //methods declarations
-    FileDescriptor() = default;
     FileDescriptor(std::shared_ptr<INode> inode, Lock::Type type) : inode(std::move(inode)), lockType(type), fileCursor(0) {}
 
     std::shared_ptr<INode> getInode() { return inode; }
