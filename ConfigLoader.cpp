@@ -96,10 +96,6 @@ std::fstream & ConfigLoader::getBlocks() const {
     return hostStreams[FdNames::BLOCKS];
 }
 
-int ConfigLoader::getSizeOfInode() const {
-    return sizeofInode;
-}
-
 int ConfigLoader::getSizeOfBlock() const {
     return sizeOfBlock;
 }

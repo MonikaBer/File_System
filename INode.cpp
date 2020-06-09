@@ -15,6 +15,7 @@ std::fstream& operator>>(std::fstream &is, std::shared_ptr<INode> iNode) {
 }
 
 std::fstream & operator<<(std::fstream &os, const std::shared_ptr<INode> iNode) {
+//    std::array<char, sizeofInode
     os.write((char*)iNode->mode, sizeof(iNode->mode));
     os.write((char*)iNode->length, sizeof(iNode->length));
     os.write((char*)iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
@@ -70,10 +71,11 @@ std::map<std::string, unsigned> INode::getDirectoryContent() {
     for(unsigned long i=0; i<length; i += maxFileName+sizeof(unsigned)){
             std::string name(inode_content.begin()+i, inode_content.begin()+i+maxFileName);
             unsigned inode_id = 0;
-            inode_id += 0xFF000000 & *(inode_content.begin()+i+maxFileName+1);
-            inode_id += 0x00FF0000 & *(inode_content.begin()+i+maxFileName+2);
-            inode_id += 0x0000FF00 & *(inode_content.begin()+i+maxFileName+3);
-            inode_id += 0x000000FF & *(inode_content.begin()+i+maxFileName+4);
+            // little endian
+            inode_id += 0xFF000000 & *(inode_content.begin()+i+maxFileName+4) << 24;
+            inode_id += 0x00FF0000 & *(inode_content.begin()+i+maxFileName+3) << 16;
+            inode_id += 0x0000FF00 & *(inode_content.begin()+i+maxFileName+2) << 8;
+            inode_id += 0x000000FF & *(inode_content.begin()+i+maxFileName+1);
             dir_content.insert(std::make_pair(name, inode_id));
     }
     return dir_content;
@@ -104,4 +106,52 @@ std::vector<char> INode::getContent() {
 
 unsigned int INode::getId() const {
     return inode_id;
+}
+
+INode::INode(unsigned id): inode_id(id) {
+    ConfigLoader * config = ConfigLoader::getInstance();
+    std::fstream & inodes = config->getInodes();
+    unsigned int inode_positon = id * sizeofInode;
+    inodes.seekg(0, std::ios::end);
+    if(inodes.tellg() < inode_positon + sizeofInode)
+        throw std::runtime_error("inode doesnt exist");
+    inodes.seekg(inode_positon);
+    inodes >> std::shared_ptr<INode>(this);
+}
+
+void INode::save(INode newFileInode) {
+    ConfigLoader * config = ConfigLoader::getInstance();
+    std::fstream & blocksStream = config->getBlocks();
+    seekEnd(blocksStream);
+    blocksStream << std::make_shared<INode>(newFileInode);
+}
+
+void INode::seekEnd(std::fstream &blocksStream) {
+    unsigned lastBlock = length / ConfigLoader::getInstance()->getSizeOfBlock();
+    unsigned positionInLastBlock = length % ConfigLoader::getInstance()->getSizeOfBlock();
+    unsigned lastBlockAddress = blocks[lastBlock];
+    blocksStream.seekg(lastBlock*ConfigLoader::getInstance()->getSizeOfBlock() + positionInLastBlock);
+}
+
+std::array<char, INode::sizeofInode> INode::serialize() {
+    std::array<char, sizeofInode> INodeBytes = {0};
+    int i = 0;
+
+    for(; i<sizeof(mode); ++i)
+        INodeBytes[i] = (mode >> (i * 8));
+
+    for(int k=0; i<sizeof(length); ++i, ++k)
+        INodeBytes[i] = (length >> (k * 8));
+
+    for(int k=0; i<sizeof(number_of_blocks); ++i, ++k)
+        INodeBytes[i] = (number_of_blocks >> (k * 8));
+
+    for(auto & block : blocks)
+        for(int k =0; i<sizeof(block); ++i, ++k)
+            INodeBytes[i] = (block >> (k * 8));
+
+    for(int k =0; i<sizeof(indirect_block); ++i, ++k)
+        INodeBytes[i] = (indirect_block >> (k * 8));
+
+    return INodeBytes;
 }

@@ -13,7 +13,7 @@ class ConfigLoader {
     enum FdNames {BLOCKS_BITMAP=0, INODES_BITMAP=1, INODES=2, BLOCKS=3};
     static std::fstream hostStreams[4];
 
-    static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
+
     static const int sizeOfBlock = 4096;
 
 private:
@@ -43,7 +43,6 @@ public:
     int getMaxNumberOfBlocks() const;
     int getMaxNumberOfInodes() const;
     int getMaxLengthOfName() const;
-    int getSizeOfInode() const;
     int getSizeOfBlock() const;
 
 };

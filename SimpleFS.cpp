@@ -8,12 +8,22 @@ SimpleFS::SimpleFS(std::string && configPath) {
     ConfigLoader::init(configPath);
 }
 
-
-int SimpleFS::create(std::string && name, int mode) {
-    std::vector<std::string> parsed_path = parseDirect(name);
-
-
-    return -1;
+// /aaa/ccs/asda
+int SimpleFS::create(std::string && path, unsigned short mode) {
+    std::vector<std::string> parsedPath = parseDirect(path);
+    if(parsedPath.empty())
+        return -1;
+    std::string newFileName = parsedPath.back();
+    parsedPath.pop_back();
+    try{
+        INode targetDirINode = getTargetDirectory(parsedPath);
+    }catch(...){
+        return -1;
+    }
+    INode newFile = INode(findFreeInode(), mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
+    targetDirINode.save(newFile);
+    // todo locks xdd
+    return 0;
 }
 
 
@@ -117,12 +127,13 @@ int SimpleFS::rmdir(std::string && name) {
     return -1;
 }
 
-INode SimpleFS::getTargetDirectory(const std::string& path) {
-    std::vector<std::string> parsedPath = parseDirect(path);
-    unsigned currentDirectoryInode = 0;
-    for(auto fileName = parsedPath.begin(); fileName != parsedPath.end()-1; fileName++){
-
+INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {
+    INode inode = INode(0);
+    for(const auto & fileName : path){
+        std::map<std::string, unsigned> dir = inode.getDirectoryContent();
+        inode = INode(dir[fileName]);
     }
+    return inode;
 }
 
 std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
@@ -168,24 +179,24 @@ int SimpleFS::findFreeInode() {
  * @param inode - object to save
  * @return
  */
-int SimpleFS::writeInode(FileDescriptor &fd) {
-    ConfigLoader* loader = ConfigLoader::getInstance();
-    std::fstream &ofs = loader->getInodes();
-    ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
-    ofs << fd.getInode();
-
-    // update bitmap
-    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-    std::fstream &inodesBitmap = loader->getInodesBitmap();
-    inodesBitmap.seekg(fd.getInode()->getId()/8);
-    char byte;
-    inodesBitmap.read(&byte, 1);
-    byte |= 1 << (fd.getInode()->getId()%8);
-    inodesBitmap.seekp(fd.getInode()->getId()/8);
-    inodesBitmap.write(&byte, 1);
-
-    // TODO return errors ( + doc)
-}
+//int SimpleFS::writeInode(FileDescriptor &fd) {
+//    ConfigLoader* loader = ConfigLoader::getInstance();
+//    std::fstream &ofs = loader->getInodes();
+//    //ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
+//    ofs << fd.getInode();
+//
+//    // update bitmap
+//    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
+//    std::fstream &inodesBitmap = loader->getInodesBitmap();
+//    inodesBitmap.seekg(fd.getInode()->getId()/8);
+//    char byte;
+//    inodesBitmap.read(&byte, 1);
+//    byte |= 1 << (fd.getInode()->getId()%8);
+//    inodesBitmap.seekp(fd.getInode()->getId()/8);
+//    inodesBitmap.write(&byte, 1);
+//
+//    // TODO return errors ( + doc)
+//}
 
 /**
  * Reads INode into inode.
@@ -194,23 +205,23 @@ int SimpleFS::writeInode(FileDescriptor &fd) {
  * @param inode - object to read INode into
  * @return
  */
-INode SimpleFS::readInode(FileDescriptor &fd) {
-    ConfigLoader* loader = ConfigLoader::getInstance();
-    std::fstream& inodes = loader->getInodes();
-    inodes.seekg(fd.getInode()->getId()*loader->getSizeOfInode());
-    inodes >> fd.getInode();
-
-    // TODO return errors ( + doc)
-}
-
-INode SimpleFS::readInode(int inodeNumber) {
-    ConfigLoader *loader = ConfigLoader::getInstance();
-    std::fstream &ifs = loader->getInodes();
-    ifs.seekg(inodeNumber*loader->getSizeOfInode());
-    //ifs >> inode;
-
-    // TODO return errors ( + doc)
-}
+//INode SimpleFS::readInode(FileDescriptor &fd) {
+//    ConfigLoader* loader = ConfigLoader::getInstance();
+//    std::fstream& inodes = loader->getInodes();
+//    inodes.seekg(fd.getInode()->getId()*loader->getSizeOfInode());
+//    inodes >> fd.getInode();
+//
+//    // T ODO return errors ( + doc)
+//}
+//
+//INode SimpleFS::readInode(int inodeNumber) {
+//    ConfigLoader *loader = ConfigLoader::getInstance();
+//    std::fstream &ifs = loader->getInodes();
+//    ifs.seekg(inodeNumber*loader->getSizeOfInode());
+//    //ifs >> inode;
+//
+//    // T ODO return errors ( + doc)
+//}
 
 /**
  * Clears INode by clearing corresponding bit in bitmap. Data is not cleared.

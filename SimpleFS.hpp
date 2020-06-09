@@ -20,17 +20,17 @@ private:
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
 public: //TODO: Change to private
-    int writeInode(FileDescriptor& fd);
-    INode readInode(FileDescriptor& fd);
-    INode readInode(int inodeNumber);
+    //int writeInode(FileDescriptor& fd);
+    //INode readInode(FileDescriptor& fd);
+    //INode readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
     unsigned getFreeBlock();
     int freeBlock(unsigned block);
-    INode getTargetDirectory(const std::string& path);
+    INode getTargetDirectory(const std::vector<std::string> &path);
 
 public:
     explicit SimpleFS(std::string && configPath);
-    int create(std::string && name, int mode);
+    int create(std::string && path, unsigned short mode);
     int open(std::string && name, int mode);
     int read(int fd, char * buf, int len);
     int write(int fd, char * buf, int len);
