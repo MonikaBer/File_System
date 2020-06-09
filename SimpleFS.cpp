@@ -16,7 +16,7 @@ SimpleFS::SimpleFS(std::string && configPath) {
 
 
 int SimpleFS::create(std::string && name, int mode) {
-    std::vector<std::string> parsed_path = parse_direct(name);
+    std::vector<std::string> parsed_path = parseDirect(name);
     if(parsed_path.empty())
         return -1;
     //lock root;
@@ -154,7 +154,7 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
 }
 
 int SimpleFS::findFreeInode() {
-    std::ifstream input(inodes_bitmap);
+    std::ifstream input(inodesBitmap);
     if(!input.is_open())
         throw std::runtime_error("Couldn't open inodes bitmap file.");
 
@@ -187,11 +187,11 @@ int SimpleFS::createSystemFiles() {
     // TODO creating single file is pointless - losing blocks/inodes renders whole filesystem
     // TODO lost bitmaps could be rebuilt if freed block/inode would have its data overwritten with zeroes
     // blocks bitmap file
-    if(!fileExists(blocks_bitmap)) {
-        createBitmapFile(blocks_bitmap, max_number_of_blocks);
+    if(!fileExists(blocksBitmap)) {
+        createBitmapFile(blocksBitmap, maxNumberOfBlocks);
     }
-    if(!fileExists(inodes_bitmap)) {
-        createBitmapFile(inodes_bitmap, max_number_of_inodes);
+    if(!fileExists(inodesBitmap)) {
+        createBitmapFile(inodesBitmap, maxNumberOfInodes);
     }
     if(!fileExists(blocks)) {
         createBlocksFile(blocks);
@@ -229,7 +229,7 @@ int SimpleFS::createBitmapFile(const std::string &path, int numberOfBits) {
  */
 int SimpleFS::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
-    ofs.seekp(max_number_of_inodes*sizeofInode - 1);
+    ofs.seekp(maxNumberOfInodes*sizeofInode - 1);
     ofs.write("", 1);
 
     // TODO return errors ( + doc)
@@ -243,7 +243,7 @@ int SimpleFS::createInodesFile(const std::string &path) const {
  */
 int SimpleFS::createBlocksFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
-    ofs.seekp(max_number_of_blocks * blockSize - 1);
+    ofs.seekp(maxNumberOfBlocks * blockSize - 1);
     ofs.write("", 1);
 
     // TODO return errors ( + doc)
@@ -279,7 +279,7 @@ int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
 
     // update bitmap
     // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-    std::fstream bitmapfs(inodes_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream bitmapfs(inodesBitmap, std::ios::binary | std::ios::in | std::ios::out);
     bitmapfs.seekg(fd.getInodeId()/8);
     char byte;
     bitmapfs.read(&byte, 1);
@@ -312,7 +312,7 @@ int SimpleFS::readInode(FileDescriptor &fd, INode &inode) {
  * @return 
  */
 int SimpleFS::clearInode(FileDescriptor &fd) {
-    std::fstream bitmapfs(inodes_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream bitmapfs(inodesBitmap, std::ios::binary | std::ios::in | std::ios::out);
     bitmapfs.seekg(fd.getInodeId()/8);
     char byte;
     bitmapfs.read(&byte, 1);
@@ -330,7 +330,7 @@ int SimpleFS::clearInode(FileDescriptor &fd) {
  * @return positive number - block number
  */
 unsigned SimpleFS::getFreeBlock() {
-    std::fstream bitmapfs(blocks_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream bitmapfs(blocksBitmap, std::ios::binary | std::ios::in | std::ios::out);
     unsigned block = 0;
     unsigned char byte;
     bool looking = true;
@@ -374,7 +374,7 @@ int SimpleFS::freeBlock(unsigned int block) {
         return -1;
     }
 
-    std::fstream bitmapfs(blocks_bitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream bitmapfs(blocksBitmap, std::ios::binary | std::ios::in | std::ios::out);
     bitmapfs.seekg(block/8);
     char byte;
     bitmapfs.read(&byte, 1);
