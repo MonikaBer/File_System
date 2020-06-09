@@ -23,8 +23,8 @@ std::ostream & operator<<(std::ostream &os, const INode &iNode) {
     return os;
 }
 
-INode::INode(unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock)
-                : mode(mode), length(length), number_of_blocks(numberOfBlocks), indirect_block(indirectBlock) {}
+INode::INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock)
+                : id(id), mode(mode), length(length), number_of_blocks(numberOfBlocks), indirect_block(indirectBlock) {}
 
 int INode::addBlock(unsigned int block) {
     auto it = std::find(blocks.begin(), blocks.end(), 0);
@@ -86,6 +86,7 @@ std::vector<char> INode::getContent() {
     std::vector<char> content;
     unsigned long loaded = 0;
     char block_content[sizeOfBlock];
+    //todo: pewnie trzeba tu zrobić blokady
     for(auto & a : blocks){
         blocks_stream.seekg(a * sizeOfBlock);
         if(length - loaded < sizeOfBlock){

@@ -12,6 +12,7 @@ class INode {
 private:
     const static unsigned maxBlocksNo = 12;
 
+    unsigned int id;
     unsigned short mode;
     long length = 0;
     unsigned number_of_blocks = 0;
@@ -26,7 +27,7 @@ public:
 
     //methods declarations
     INode() = default;
-    INode(unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);
+    INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);
     int addBlock(unsigned block);
     int removeBlock(unsigned block);
     unsigned getBlock(unsigned index) const { if(index<blocks.size()) return blocks[index]; else return 0; };    // error returns 0 because block 0 is reserved for root
