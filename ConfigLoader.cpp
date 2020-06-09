@@ -20,6 +20,14 @@ ConfigLoader::ConfigLoader(std::string path)
     }
 }
 
+void ConfigLoader::init(std::string path) {
+    loader = std::make_unique<ConfigLoader>(path);
+}
+
+ConfigLoader* ConfigLoader::getInstance(){
+    return loader.get();
+}
+
 void ConfigLoader::strip(std::string& string, const std::string& characters_to_avoid){
     left_strip(string, characters_to_avoid);
     right_strip(string, characters_to_avoid);

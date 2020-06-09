@@ -3,9 +3,11 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 class ConfigLoader {
     static std::map<std::string, std::string> map;
+    static std::unique_ptr<ConfigLoader> loader;
 
 private:
     void strip(std::string& string, const std::string& characters_to_avoid = "\t\n\v\f\r ");
@@ -14,13 +16,15 @@ private:
 
 public:
     static void init(std::string path);
-    static std::string getBlocksBitmapPath();
-    static std::string getInodesBitmapPath();
-    static std::string getInodesPath();
-    static std::string getBlocksPath();
-    static int getMaxNumberOfBlocks();
-    static int getMaxNumberOfInodes();
-    static int getMaxLengthOfName();
+    static ConfigLoader* getInstance();
+    ConfigLoader(std::string path);
+    std::string getBlocksBitmapPath();
+    std::string getInodesBitmapPath();
+    std::string getInodesPath();
+    std::string getBlocksPath();
+    int getMaxNumberOfBlocks();
+    int getMaxNumberOfInodes();
+    int getMaxLengthOfName();
 };
 
 #endif
