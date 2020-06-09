@@ -6,10 +6,12 @@ static const int blockSize = 4096;
 #include <string>
 #include <vector>
 #include <map>
+#include <stack>
 
 #include "Lock.hpp"
 #include "FileDescriptor.hpp"
 #include "INode.hpp"
+#include "Directory.hpp"
 
 
 class SimpleFS {
@@ -19,17 +21,8 @@ private:
     enum fdNames {BLOCKS_BITMAP, INODES_BITMAP, INODES, BLOCKS};
     static const int hostFd[4];
 
-    //files paths
-    std::string blocksBitmap;
-    std::string inodesBitmap;
-    std::string inodes;
-    std::string blocks;
-
-    int maxNumberOfBlocks;
-    int maxNumberOfInodes;
-
-    std::vector<Lock> openInodes;
-    std::vector<FileDescriptor*> fds;
+    std::stack<Lock> openInodes;
+    std::vector<FileDescriptor> fds;
 
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
@@ -40,11 +33,12 @@ private:
 
 public: //TODO: Change to private
     int writeInode(FileDescriptor& fd, INode& inode);
-    int readInode(FileDescriptor& fd, INode& inode);
+    INode readInode(FileDescriptor& fd);
+    INode readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
     unsigned getFreeBlock();
     int freeBlock(unsigned block);
-    int getTargetDirectoryINode(const std::string& path);
+    Directory getTargetDirectory(const std::string& path);
 
 public:
     SimpleFS(std::string && configPath);

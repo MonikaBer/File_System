@@ -5,7 +5,7 @@
 #include <map>
 
 class ConfigLoader {
-    std::map<std::string, std::string> map;
+    static std::map<std::string, std::string> map;
 
 private:
     void strip(std::string& string, const std::string& characters_to_avoid = "\t\n\v\f\r ");
@@ -13,13 +13,14 @@ private:
     void right_strip(std::string& string, const std::string& characters_to_avoid);
 
 public:
-    ConfigLoader(std::string path);
-    std::string getBlocksBitmapPath();
-    std::string getInodesBitmapPath();
-    std::string getInodesPath(); 
-    std::string getBlocksPath();
-    int getMaxNumberOfBlocks(); 
-    int getMaxNumberOfInodes();
+    static void init(std::string path);
+    static std::string getBlocksBitmapPath();
+    static std::string getInodesBitmapPath();
+    static std::string getInodesPath();
+    static std::string getBlocksPath();
+    static int getMaxNumberOfBlocks();
+    static int getMaxNumberOfInodes();
+    static int getMaxLengthOfName();
 };
 
 #endif

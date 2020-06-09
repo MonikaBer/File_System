@@ -2,7 +2,7 @@
 #include <algorithm>
 
 #include "INode.hpp"
-
+#include "ConfigLoader.hpp"
 
 //methods definitions
 std::istream & operator>>(std::istream &is, INode &iNode) {

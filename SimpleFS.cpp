@@ -5,24 +5,13 @@
 #include "ConfigLoader.hpp"
 
 SimpleFS::SimpleFS(std::string && configPath) {
-    ConfigLoader loader(configPath);
-    blocksBitmap = loader.getBlocksBitmapPath();
-    inodesBitmap = loader.getInodesBitmapPath();
-    inodes = loader.getInodesPath();
-    blocks = loader.getBlocksPath();
-    maxNumberOfBlocks = loader.getMaxNumberOfBlocks();
-    maxNumberOfInodes = loader.getMaxNumberOfInodes();
+    ConfigLoader::init(configPath);
 }
 
 
 int SimpleFS::create(std::string && name, int mode) {
     std::vector<std::string> parsed_path = parseDirect(name);
-    if(parsed_path.empty())
-        return -1;
-    //lock root;
-    for(auto file = parsed_path.begin(); file != parsed_path.end()-1; ++file){
-        //lock file;
-    }
+
 
     return -1;
 }
@@ -41,8 +30,7 @@ int SimpleFS::read(int fd, char * buf, int len) {
 
     FileDescriptor &fdr = *(fds[fd]);
     unsigned cursor = fdr.getFileCursor();
-    INode inode;
-    readInode(fdr, inode);  // TODO will have return error implemented
+    INode inode = readInode(fdr, inode);  // TODO will have return error implemented
     unsigned totalRead = 0;
 
     // if trying to read more than left in file, cut len so it stops on end of file
@@ -129,9 +117,10 @@ int SimpleFS::rmdir(std::string && name) {
     return -1;
 }
 
-int SimpleFS::getTargetDirectoryINode(const std::string& path) {
+Directory SimpleFS::getTargetDirectory(const std::string& path) {
     std::vector<std::string> parsedPath = parseDirect(path);
     unsigned currentDirectoryInode = 0;
+
     openInodes.emplace_back(Lock::Type::RD_LOCK, currentDirectoryInode);
     for(auto fileName = parsedPath.begin(); fileName != parsedPath.end()-1; fileName++){
 
@@ -297,9 +286,17 @@ int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
  * @param inode - object to read INode into
  * @return
  */
-int SimpleFS::readInode(FileDescriptor &fd, INode &inode) {
+INode SimpleFS::readInode(FileDescriptor &fd) {
     std::ifstream ifs(inodes, std::ios::binary);
     ifs.seekg(fd.getInodeId()*sizeofInode);
+    ifs >> inode;
+
+    // TODO return errors ( + doc)
+}
+
+INode SimpleFS::readInode(int inodeNumber) {
+    std::ifstream ifs(inodes, std::ios::binary);
+    ifs.seekg(inodeNumber*sizeofInode);
     ifs >> inode;
 
     // TODO return errors ( + doc)

@@ -56,3 +56,7 @@ int ConfigLoader::getMaxNumberOfBlocks(){
 int ConfigLoader::getMaxNumberOfInodes(){
     return std::stoi(map["max number of inodes"]);
 }
+
+int ConfigLoader::getMaxLengthOfName(){
+    return std::stoi(map["max length of name"]);
+}
