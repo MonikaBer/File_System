@@ -34,7 +34,6 @@ int SimpleFS::open(std::string && name, int mode) {
 
 int SimpleFS::read(int fd, char * buf, int len) {
     // TODO not tested!
-    // TODO possibly add returning EOF when cursor == inode.len + update doc
     if ( fd >= fds.size() )
         return -1;
 
@@ -42,6 +41,8 @@ int SimpleFS::read(int fd, char * buf, int len) {
     unsigned cursor = fdr.getFileCursor();
     std::shared_ptr<INode> inode = fdr.getInode();
     unsigned totalRead = 0;
+
+    std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
 
     // if trying to read more than left in file, cut len so it stops on end of file
     if (len + cursor > inode->getLength())
@@ -60,7 +61,8 @@ int SimpleFS::read(int fd, char * buf, int len) {
         if (blockOffset + len > blockSize)
             singleRead = blockSize - blockOffset;
 
-        // TODO read from host file
+        blocksFile.seekg(host_file_offset);
+        blocksFile.read(buf+totalRead, singleRead);
 
         totalRead += singleRead;
         cursor += singleRead;
