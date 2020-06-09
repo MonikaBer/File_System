@@ -25,10 +25,10 @@ ConfigLoader::ConfigLoader(std::string path)
         map[key] = value;
     }
     createSystemFiles();
-    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary);
-    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary);
-    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary);
-    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary);
+    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary | std::ios::in | std::ios::out);
 }
 
 void ConfigLoader::init(std::string path) {
@@ -152,7 +152,7 @@ int ConfigLoader::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
-    ofs.seekp(getMaxNumberOfInodes()*sizeofInode - 1);
+    ofs.seekp(getMaxNumberOfInodes()*(sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned)) - 1);  // TODO hardcoded
     ofs.write("", 1);
 }
 

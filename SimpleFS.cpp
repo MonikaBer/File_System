@@ -9,22 +9,22 @@ SimpleFS::SimpleFS(std::string && configPath) {
 }
 
 // /aaa/ccs/asda
-int SimpleFS::create(std::string && path, unsigned short mode) {
-    std::vector<std::string> parsedPath = parseDirect(path);
-    if(parsedPath.empty())
-        return -1;
-    std::string newFileName = parsedPath.back();
-    parsedPath.pop_back();
-    try{
-        INode targetDirINode = getTargetDirectory(parsedPath);
-    }catch(...){
-        return -1;
-    }
-    INode newFile = INode(findFreeInode(), mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
-    targetDirINode.save(newFile);
-    // todo locks xdd
-    return 0;
-}
+//int SimpleFS::create(std::string && path, unsigned short mode) {
+//    std::vector<std::string> parsedPath = parseDirect(path);
+//    if(parsedPath.empty())
+//        return -1;
+//    std::string newFileName = parsedPath.back();
+//    parsedPath.pop_back();
+//    try{
+//        INode targetDirINode = getTargetDirectory(parsedPath);
+//    }catch(...){
+//        return -1;
+//    }
+//    INode newFile = INode(findFreeInode(), mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
+//    targetDirINode.save(newFile);
+//    // todo locks xdd
+//    return 0;
+//}
 
 
 int SimpleFS::open(std::string && name, int mode) {
@@ -32,43 +32,43 @@ int SimpleFS::open(std::string && name, int mode) {
 }
 
 
-int SimpleFS::read(int fd, char * buf, int len) {
-    // TODO not tested!
-    // TODO possibly add returning EOF when cursor == inode.len + update doc
-    if ( fd >= fds.size() )
-        return -1;
-
-    FileDescriptor &fdr = fds[fd];
-    unsigned cursor = fdr.getFileCursor();
-    INode inode = readInode(fdr);  // TODO will have return error implemented
-    unsigned totalRead = 0;
-
-    // if trying to read more than left in file, cut len so it stops on end of file
-    if (len + cursor > inode.getLength())
-        len = inode.getLength() - cursor;
-
-    int blockSize = ConfigLoader::getInstance()->getSizeOfBlock();
-    while (len) {
-        // calculate host file offset
-        unsigned iNodeBlockIndex = cursor / blockSize;
-        unsigned blockOffset = cursor % blockSize;
-        unsigned block = inode.getBlock(iNodeBlockIndex);
-        unsigned host_file_offset = block * blockSize + blockOffset;
-
-        unsigned singleRead = len;
-        // if this read spans over more than 1 block, read must be divided into parts
-        if (blockOffset + len > blockSize)
-            singleRead = blockSize - blockOffset;
-
-        // TODO read from host file
-
-        totalRead += singleRead;
-        cursor += singleRead;
-        len -= singleRead;
-    }
-
-    return totalRead;
-}
+//int SimpleFS::read(int fd, char * buf, int len) {
+//    // TODO not tested!
+//    // TODO possibly add returning EOF when cursor == inode.len + update doc
+//    if ( fd >= fds.size() )
+//        return -1;
+//
+//    FileDescriptor &fdr = fds[fd];
+//    unsigned cursor = fdr.getFileCursor();
+//    INode inode = readInode(fdr);  // TODO will have return error implemented
+//    unsigned totalRead = 0;
+//
+//    // if trying to read more than left in file, cut len so it stops on end of file
+//    if (len + cursor > inode.getLength())
+//        len = inode.getLength() - cursor;
+//
+//    int blockSize = ConfigLoader::getInstance()->getSizeOfBlock();
+//    while (len) {
+//        // calculate host file offset
+//        unsigned iNodeBlockIndex = cursor / blockSize;
+//        unsigned blockOffset = cursor % blockSize;
+//        unsigned block = inode.getBlock(iNodeBlockIndex);
+//        unsigned host_file_offset = block * blockSize + blockOffset;
+//
+//        unsigned singleRead = len;
+//        // if this read spans over more than 1 block, read must be divided into parts
+//        if (blockOffset + len > blockSize)
+//            singleRead = blockSize - blockOffset;
+//
+//        // TODO read from host file
+//
+//        totalRead += singleRead;
+//        cursor += singleRead;
+//        len -= singleRead;
+//    }
+//
+//    return totalRead;
+//}
 
 
 int SimpleFS::write(int fd, char * buf, int len) {
@@ -76,37 +76,37 @@ int SimpleFS::write(int fd, char * buf, int len) {
 }
 
 
-int SimpleFS::lseek(int fd, int whence, int offset) {
-    // TODO not tested!
-    if ( fd >= fds.size() )
-        return 0; // TODO what to return if error? both positive and negative numbers are taken!
-
-    FileDescriptor &fdr = fds[fd];
-    INode inode = readInode(fdr);  // TODO will have return error implemented
-
-    if (whence == 0) {
-        if (offset < 0 || offset >= inode.getLength()) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
-        }
-        fdr.setFileCursor(offset);
-    }
-    else if (whence == 1) {
-        long cursor = fdr.getFileCursor();
-        if (offset + cursor < 0 || offset + cursor >= inode.getLength()) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
-        }
-        fdr.setFileCursor(offset + cursor);
-    }
-    else if (whence == 2) {
-        if (offset > 0 || offset + inode.getLength() < 0) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
-        }
-        // - 1 because length points to byte AFTER last byte of file, which is against lseek description in documentation
-        fdr.setFileCursor(inode.getLength() - 1 + offset);
-    }
-    else return 0; // TODO what to return if error? both positive and negative numbers are taken!
-    return offset;
-}
+//int SimpleFS::lseek(int fd, int whence, int offset) {
+//    // TODO not tested!
+//    if ( fd >= fds.size() )
+//        return 0; // TODO what to return if error? both positive and negative numbers are taken!
+//
+//    FileDescriptor &fdr = fds[fd];
+//    INode inode = readInode(fdr);  // TODO will have return error implemented
+//
+//    if (whence == 0) {
+//        if (offset < 0 || offset >= inode.getLength()) {
+//            return 0; // TODO what to return if error? both positive and negative numbers are taken!
+//        }
+//        fdr.setFileCursor(offset);
+//    }
+//    else if (whence == 1) {
+//        long cursor = fdr.getFileCursor();
+//        if (offset + cursor < 0 || offset + cursor >= inode.getLength()) {
+//            return 0; // TODO what to return if error? both positive and negative numbers are taken!
+//        }
+//        fdr.setFileCursor(offset + cursor);
+//    }
+//    else if (whence == 2) {
+//        if (offset > 0 || offset + inode.getLength() < 0) {
+//            return 0; // TODO what to return if error? both positive and negative numbers are taken!
+//        }
+//        // - 1 because length points to byte AFTER last byte of file, which is against lseek description in documentation
+//        fdr.setFileCursor(inode.getLength() - 1 + offset);
+//    }
+//    else return 0; // TODO what to return if error? both positive and negative numbers are taken!
+//    return offset;
+//}
 
 
 int SimpleFS::unlink(std::string && name) {
@@ -179,24 +179,24 @@ int SimpleFS::findFreeInode() {
  * @param inode - object to save
  * @return
  */
-//int SimpleFS::writeInode(FileDescriptor &fd) {
-//    ConfigLoader* loader = ConfigLoader::getInstance();
-//    std::fstream &ofs = loader->getInodes();
-//    //ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
-//    ofs << fd.getInode();
-//
-//    // update bitmap
-//    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-//    std::fstream &inodesBitmap = loader->getInodesBitmap();
-//    inodesBitmap.seekg(fd.getInode()->getId()/8);
-//    char byte;
-//    inodesBitmap.read(&byte, 1);
-//    byte |= 1 << (fd.getInode()->getId()%8);
-//    inodesBitmap.seekp(fd.getInode()->getId()/8);
-//    inodesBitmap.write(&byte, 1);
-//
-//    // TODO return errors ( + doc)
-//}
+int SimpleFS::writeInode(FileDescriptor &fd) {
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    std::fstream &ofs = loader->getInodes();
+    //ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
+    ofs << fd.getInode();
+
+    // update bitmap
+    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
+    std::fstream &inodesBitmap = loader->getInodesBitmap();
+    inodesBitmap.seekg(fd.getInode()->getId()/8);
+    char byte;
+    inodesBitmap.read(&byte, 1);
+    byte |= 1 << (fd.getInode()->getId()%8);
+    inodesBitmap.seekp(fd.getInode()->getId()/8);
+    inodesBitmap.write(&byte, 1);
+
+    // TODO return errors ( + doc)
+}
 
 /**
  * Reads INode into inode.

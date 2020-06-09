@@ -12,7 +12,6 @@ class INode {
 private:
     const static unsigned maxBlocksNo = 12;
 
-    static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
     unsigned short mode;
     long length = 0;
     unsigned number_of_blocks = 0;
@@ -24,9 +23,10 @@ private:
     friend std::fstream& operator<<(std::fstream& os, std::shared_ptr<INode> en);
 
     void seekEnd(std::fstream & blocksStream);
-    std::array<char, sizeofInode> serialize();
+
 public:
     // TODO public for testing
+    static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
     int freeAllBlocks();
     unsigned int getId() const;
     //methods declarations
@@ -43,6 +43,8 @@ public:
     std::map<std::string, unsigned> getDirectoryContent();
     std::vector<char> getContent();
 
+private:
+    std::array<char, sizeofInode> serialize();
 };
 
 #endif

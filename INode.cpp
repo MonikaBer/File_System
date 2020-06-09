@@ -16,11 +16,11 @@ std::fstream& operator>>(std::fstream &is, std::shared_ptr<INode> iNode) {
 
 std::fstream & operator<<(std::fstream &os, const std::shared_ptr<INode> iNode) {
 //    std::array<char, sizeofInode
-    os.write((char*)iNode->mode, sizeof(iNode->mode));
-    os.write((char*)iNode->length, sizeof(iNode->length));
-    os.write((char*)iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
+    os.write((char*)&(iNode->mode), sizeof(iNode->mode));
+    os.write((char*)&(iNode->length), sizeof(iNode->length));
+    os.write((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
     os.write((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    os.write((char*)iNode->indirect_block, sizeof(iNode->indirect_block));
+    os.write((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
     return os;
 }
 
