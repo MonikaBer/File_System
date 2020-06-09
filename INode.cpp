@@ -101,3 +101,7 @@ std::vector<char> INode::getContent() {
         loaded += sizeOfBlock;
     }
 }
+
+unsigned int INode::getId() const {
+    return inode_id;
+}

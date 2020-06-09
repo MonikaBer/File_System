@@ -13,6 +13,10 @@ private:
     const static unsigned maxBlocksNo = 12;
 
     unsigned int inode_id;
+public:
+    unsigned int getId() const;
+
+private:
     unsigned short mode;
     long length = 0;
     unsigned number_of_blocks = 0;

@@ -15,19 +15,13 @@
 
 class SimpleFS {
 private:
-
-    enum fdNames {BLOCKS_BITMAP, INODES_BITMAP, INODES, BLOCKS};
-    static const int hostFd[4];
-
     std::stack<Lock> openInodes;
     std::vector<FileDescriptor> fds;
 
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
-
-
 public: //TODO: Change to private
-    int writeInode(FileDescriptor& fd, INode& inode);
+    int writeInode(FileDescriptor& fd);
     INode readInode(FileDescriptor& fd);
     INode readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
@@ -36,7 +30,7 @@ public: //TODO: Change to private
     Directory getTargetDirectory(const std::string& path);
 
 public:
-    SimpleFS(std::string && configPath);
+    explicit SimpleFS(std::string && configPath);
     int create(std::string && name, int mode);
     int open(std::string && name, int mode);
     int read(int fd, char * buf, int len);

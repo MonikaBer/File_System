@@ -30,13 +30,14 @@ int SimpleFS::read(int fd, char * buf, int len) {
 
     FileDescriptor &fdr = *(fds[fd]);
     unsigned cursor = fdr.getFileCursor();
-    INode inode = readInode(fdr, inode);  // TODO will have return error implemented
+    INode inode = readInode(fdr);  // TODO will have return error implemented
     unsigned totalRead = 0;
 
     // if trying to read more than left in file, cut len so it stops on end of file
     if (len + cursor > inode.getLength())
         len = inode.getLength() - cursor;
 
+    int blockSize = ConfigLoader::getInstance()->getSizeOfBlock();
     while (len) {
         // calculate host file offset
         unsigned iNodeBlockIndex = cursor / blockSize;
@@ -71,8 +72,7 @@ int SimpleFS::lseek(int fd, int whence, int offset) {
         return 0; // TODO what to return if error? both positive and negative numbers are taken!
 
     FileDescriptor &fdr = *(fds[fd]);
-    INode inode;
-    readInode(fdr, inode);  // TODO will have return error implemented
+    INode inode = readInode(fdr);  // TODO will have return error implemented
 
     if (whence == 0) {
         if (offset < 0 || offset >= inode.getLength()) {
@@ -170,20 +170,21 @@ int SimpleFS::findFreeInode() {
  * @param inode - object to save
  * @return
  */
-int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
-    std::ofstream ofs(inodes, std::ios::binary | std::ios::in); // ios::in is needed to avoid overwriting whole file!
-    ofs.seekp(fd.getInodeId()*sizeofInode);
-    ofs << inode;
+int SimpleFS::writeInode(FileDescriptor &fd) {
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    std::fstream &ofs = loader->getInodes();
+    ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
+    ofs << fd.getInode();
 
     // update bitmap
     // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-    std::fstream bitmapfs(inodesBitmap, std::ios::binary | std::ios::in | std::ios::out);
-    bitmapfs.seekg(fd.getInodeId()/8);
+    std::fstream &inodesBitmap = loader->getInodesBitmap();
+    inodesBitmap.seekg(fd.getInode()->getId()/8);
     char byte;
-    bitmapfs.read(&byte, 1);
-    byte |= 1 << (fd.getInodeId()%8);
-    bitmapfs.seekp(fd.getInodeId()/8);
-    bitmapfs.write(&byte, 1);
+    inodesBitmap.read(&byte, 1);
+    byte |= 1 << (fd.getInode()->getId()%8);
+    inodesBitmap.seekp(fd.getInode()->getId()/8);
+    inodesBitmap.write(&byte, 1);
 
     // TODO return errors ( + doc)
 }
@@ -196,9 +197,10 @@ int SimpleFS::writeInode(FileDescriptor &fd, INode &inode) {
  * @return
  */
 INode SimpleFS::readInode(FileDescriptor &fd) {
-    std::ifstream ifs(inodes, std::ios::binary);
-    ifs.seekg(fd.getInodeId()*sizeofInode);
-    ifs >> inode;
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    std::fstream& inodes = loader->getInodes();
+    inodes.seekg(fd.getInode()->getId()*loader->getSizeOfInode());
+    inodes >> fd.getInode();
 
     // TODO return errors ( + doc)
 }

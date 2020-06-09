@@ -20,10 +20,10 @@ ConfigLoader::ConfigLoader(std::string path)
         map[key] = value;
     }
     createSystemFiles();
-    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath());
-    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath());
-    hostStreams[FdNames::INODES].open(getInodesPath());
-    hostStreams[FdNames::BLOCKS].open(getBlocksPath());
+    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary);
+    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary);
+    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary);
+    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary);
 }
 
 void ConfigLoader::init(std::string path) {
