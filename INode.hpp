@@ -1,8 +1,12 @@
 //Class representing i-node
 #ifndef I_NODE_HPP
 #define I_NODE_HPP
+
 #include <iostream>
 #include <array>
+#include "ConfigLoader.hpp"
+#include <fstream>
+#include <vector>
 
 class INode {
 private:
@@ -27,6 +31,9 @@ public:
     int removeBlock(unsigned block);
     unsigned getBlock(unsigned index) const { if(index<blocks.size()) return blocks[index]; else return 0; };    // error returns 0 because block 0 is reserved for root
     long getLength() const { return length; };
+
+    std::map<std::string, unsigned> getDirectoryContent();
+    std::vector<char> getContent();
 };
 
 #endif

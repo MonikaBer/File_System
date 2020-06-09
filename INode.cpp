@@ -2,7 +2,7 @@
 #include <algorithm>
 
 #include "INode.hpp"
-#include "ConfigLoader.hpp"
+
 
 //methods definitions
 std::istream & operator>>(std::istream &is, INode &iNode) {
@@ -57,4 +57,46 @@ int INode::removeBlock(unsigned int block) {
 int INode::freeAllBlocks() {
     // TODO Implement
     return 0;
+}
+
+std::map<std::string, unsigned> INode::getDirectoryContent() {
+    if(!mode)
+        throw std::runtime_error("INode is not a directory");
+
+    std::map<std::string, unsigned> dir_content;
+    std::vector<char> inode_content = getContent();
+    ConfigLoader * config = ConfigLoader::getInstance();
+    int maxFileName = config->getMaxLengthOfName();
+    for(unsigned long i=0; i<length; i += maxFileName+sizeof(unsigned)){
+            std::string name(inode_content.begin()+i, inode_content.begin()+i+maxFileName);
+            unsigned inode_id = 0;
+            inode_id += 0xFF000000 & *(inode_content.begin()+i+maxFileName+1);
+            inode_id += 0x00FF0000 & *(inode_content.begin()+i+maxFileName+2);
+            inode_id += 0x0000FF00 & *(inode_content.begin()+i+maxFileName+3);
+            inode_id += 0x000000FF & *(inode_content.begin()+i+maxFileName+4);
+            dir_content.insert(std::make_pair(name, inode_id));
+    }
+    return dir_content;
+}
+
+std::vector<char> INode::getContent() {
+    ConfigLoader * config = ConfigLoader::getInstance();
+    std::fstream & blocks_stream = config->getBlocks();
+    int sizeOfBlock = config->getSizeOfBlock();
+    std::vector<char> content;
+    unsigned long loaded = 0;
+    char block_content[sizeOfBlock];
+    for(auto & a : blocks){
+        blocks_stream.seekg(a * sizeOfBlock);
+        if(length - loaded < sizeOfBlock){
+            if(length - loaded) {
+                blocks_stream.read(block_content, length - loaded);
+                content.insert(content.end(), block_content, block_content+length-loaded);
+            }
+            break;
+        }
+        blocks_stream.read(block_content, sizeOfBlock);
+        content.insert(content.end(), block_content, block_content+sizeOfBlock);
+        loaded += sizeOfBlock;
+    }
 }
