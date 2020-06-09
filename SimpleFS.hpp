@@ -1,7 +1,6 @@
 //Main class of file system
 #ifndef SIMPLE_FS_HPP
 #define SIMPLE_FS_HPP
-static const int blockSize = 4096;
 
 #include <string>
 #include <vector>
@@ -16,7 +15,6 @@ static const int blockSize = 4096;
 
 class SimpleFS {
 private:
-    const static int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
 
     enum fdNames {BLOCKS_BITMAP, INODES_BITMAP, INODES, BLOCKS};
     static const int hostFd[4];
@@ -26,10 +24,7 @@ private:
 
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
-    static int createBitmapFile(const std::string& path, int numberOfBits);
-    int createInodesFile(const std::string& path) const;
-    int createBlocksFile(const std::string& path) const;
-    static inline bool fileExists (const std::string& name);
+
 
 public: //TODO: Change to private
     int writeInode(FileDescriptor& fd, INode& inode);
@@ -50,7 +45,6 @@ public:
     int unlink(std::string && name);
     int mkdir(std::string && name);
     int rmdir(std::string && name);
-    int createSystemFiles();
 };
 
 #endif
