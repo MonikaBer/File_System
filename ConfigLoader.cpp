@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <iostream>
 
 std::unique_ptr<ConfigLoader> ConfigLoader::loader;
 std::map<std::string, std::string> ConfigLoader::map;
@@ -137,6 +138,8 @@ inline bool ConfigLoader::fileExists (const std::string& path) {
 
 int ConfigLoader::createBitmapFile(const std::string &path, int numberOfBits) {
     std::ofstream ofs(path, std::ios::binary);
+    if(!ofs.is_open())
+        throw std::runtime_error("Cannot open file of path " + path);
     char reserved = 1;
     ofs.write(&reserved, 1);        // reserve bit [0] for root
     ofs.seekp(ceil(numberOfBits/8.0) - 1);
@@ -151,6 +154,8 @@ int ConfigLoader::createBitmapFile(const std::string &path, int numberOfBits) {
  */
 int ConfigLoader::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
+    if(!ofs.is_open())
+        throw std::runtime_error("Cannot open file of path " + path);
     ofs.seekp(getMaxNumberOfInodes()*sizeofInode - 1);
     ofs.write("", 1);
 }
@@ -163,6 +168,8 @@ int ConfigLoader::createInodesFile(const std::string &path) const {
  */
 int ConfigLoader::createBlocksFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
+    if(!ofs.is_open())
+        throw std::runtime_error("Cannot open file of path " + path);
     ofs.seekp(getMaxNumberOfBlocks() * sizeOfBlock - 1);
     ofs.write("", 1);
 }
