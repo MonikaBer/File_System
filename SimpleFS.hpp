@@ -10,7 +10,6 @@
 #include "Lock.hpp"
 #include "FileDescriptor.hpp"
 #include "INode.hpp"
-#include "Directory.hpp"
 
 
 class SimpleFS {
@@ -27,7 +26,7 @@ public: //TODO: Change to private
     int clearInode(FileDescriptor&fd);
     unsigned getFreeBlock();
     int freeBlock(unsigned block);
-    Directory getTargetDirectory(const std::string& path);
+    INode getTargetDirectory(const std::string& path);
 
 public:
     explicit SimpleFS(std::string && configPath);

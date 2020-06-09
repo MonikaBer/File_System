@@ -3,6 +3,10 @@
 #include <sstream>
 #include <cmath>
 
+std::unique_ptr<ConfigLoader> ConfigLoader::loader;
+std::map<std::string, std::string> ConfigLoader::map;
+std::fstream ConfigLoader::hostStreams[4];
+
 ConfigLoader::ConfigLoader(std::string path)
 {
     std::ifstream input(path);

@@ -28,7 +28,7 @@ int SimpleFS::read(int fd, char * buf, int len) {
     if ( fd >= fds.size() )
         return -1;
 
-    FileDescriptor &fdr = *(fds[fd]);
+    FileDescriptor &fdr = fds[fd];
     unsigned cursor = fdr.getFileCursor();
     INode inode = readInode(fdr);  // TODO will have return error implemented
     unsigned totalRead = 0;
@@ -71,7 +71,7 @@ int SimpleFS::lseek(int fd, int whence, int offset) {
     if ( fd >= fds.size() )
         return 0; // TODO what to return if error? both positive and negative numbers are taken!
 
-    FileDescriptor &fdr = *(fds[fd]);
+    FileDescriptor &fdr = fds[fd];
     INode inode = readInode(fdr);  // TODO will have return error implemented
 
     if (whence == 0) {
@@ -117,11 +117,9 @@ int SimpleFS::rmdir(std::string && name) {
     return -1;
 }
 
-Directory SimpleFS::getTargetDirectory(const std::string& path) {
+INode SimpleFS::getTargetDirectory(const std::string& path) {
     std::vector<std::string> parsedPath = parseDirect(path);
     unsigned currentDirectoryInode = 0;
-
-    openInodes.emplace_back(Lock::Type::RD_LOCK, currentDirectoryInode);
     for(auto fileName = parsedPath.begin(); fileName != parsedPath.end()-1; fileName++){
 
     }
@@ -143,7 +141,7 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
 }
 
 int SimpleFS::findFreeInode() {
-    std::ifstream input(inodesBitmap);
+    std::fstream &input = ConfigLoader::getInstance()->getInodesBitmap();
     if(!input.is_open())
         throw std::runtime_error("Couldn't open inodes bitmap file.");
 
@@ -206,9 +204,10 @@ INode SimpleFS::readInode(FileDescriptor &fd) {
 }
 
 INode SimpleFS::readInode(int inodeNumber) {
-    std::ifstream ifs(inodes, std::ios::binary);
-    ifs.seekg(inodeNumber*sizeofInode);
-    ifs >> inode;
+    ConfigLoader *loader = ConfigLoader::getInstance();
+    std::fstream &ifs = loader->getInodes();
+    ifs.seekg(inodeNumber*loader->getSizeOfInode());
+    //ifs >> inode;
 
     // TODO return errors ( + doc)
 }
@@ -220,12 +219,12 @@ INode SimpleFS::readInode(int inodeNumber) {
  * @return 
  */
 int SimpleFS::clearInode(FileDescriptor &fd) {
-    std::fstream bitmapfs(inodesBitmap, std::ios::binary | std::ios::in | std::ios::out);
-    bitmapfs.seekg(fd.getInodeId()/8);
+    std::fstream& bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
+    bitmapfs.seekg(fd.getInode()->getId()/8);
     char byte;
     bitmapfs.read(&byte, 1);
-    byte &= ~(1 << (fd.getInodeId()%8));
-    bitmapfs.seekp(fd.getInodeId()/8);
+    byte &= ~(1 << (fd.getInode()->getId()%8));
+    bitmapfs.seekp(fd.getInode()->getId()/8);
     bitmapfs.write(&byte, 1);
     
     // TODO return errors ( + doc)
@@ -238,7 +237,7 @@ int SimpleFS::clearInode(FileDescriptor &fd) {
  * @return positive number - block number
  */
 unsigned SimpleFS::getFreeBlock() {
-    std::fstream bitmapfs(blocksBitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
     unsigned block = 0;
     unsigned char byte;
     bool looking = true;
@@ -282,7 +281,7 @@ int SimpleFS::freeBlock(unsigned int block) {
         return -1;
     }
 
-    std::fstream bitmapfs(blocksBitmap, std::ios::binary | std::ios::in | std::ios::out);
+    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
     bitmapfs.seekg(block/8);
     char byte;
     bitmapfs.read(&byte, 1);

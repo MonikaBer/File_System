@@ -23,8 +23,8 @@ private:
     std::array<unsigned, maxBlocksNo> blocks = {0};
     unsigned indirect_block = 0;
 
-    friend std::istream& operator>>(std::istream& is, std::shared_ptr<INode> & en);
-    friend std::ostream& operator<<(std::ostream& os, const std::shared_ptr<INode> & en);
+    friend std::fstream& operator>>(std::fstream& is, std::shared_ptr<INode> en);
+    friend std::fstream& operator<<(std::fstream& os, std::shared_ptr<INode> en);
 public:
     // TODO public for testing
     int freeAllBlocks();
