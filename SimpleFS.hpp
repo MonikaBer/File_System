@@ -21,11 +21,9 @@ private:
     int findFreeInode();
 public: //TODO: Change to private
     int writeInode(FileDescriptor& fd);
-    //INode readInode(FileDescriptor& fd);
-    //INode readInode(int inodeNumber);
+    INode readInode(FileDescriptor& fd);
+    INode readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
-    unsigned getFreeBlock();
-    int freeBlock(unsigned block);
     INode getTargetDirectory(const std::vector<std::string> &path);
 
 public:

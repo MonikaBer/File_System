@@ -29,12 +29,13 @@ public:
     static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
     int freeAllBlocks();
     unsigned int getId() const;
+
     //methods declarations
     INode() = default;
     INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);
     INode(unsigned id); // reads inode from file
     int addBlock(unsigned block);
-    int removeBlock(unsigned block);
+    int removeBlock();
     unsigned getBlock(unsigned index) const { if(index<blocks.size()) return blocks[index]; else return 0; };    // error returns 0 because block 0 is reserved for root
     long getLength() const { return length; };
 
