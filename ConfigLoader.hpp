@@ -5,6 +5,8 @@
 #include <map>
 #include <memory>
 
+#include "INode.hpp"
+
 class ConfigLoader {
     static std::unique_ptr<ConfigLoader> loader;
 

@@ -221,7 +221,7 @@ int SimpleFS::writeInode(FileDescriptor &fd) {
 //
 //    // T ODO return errors ( + doc)
 //}
-//
+
 //INode SimpleFS::readInode(int inodeNumber) {
 //    ConfigLoader *loader = ConfigLoader::getInstance();
 //    std::fstream &ifs = loader->getInodes();
