@@ -7,8 +7,8 @@
 
 #include "INode.hpp"
 
-class ConfigLoader {
-    static ConfigLoader loader;
+class ResourceManager {
+    static ResourceManager loader;
 
     std::map<std::string, std::string> map;
 
@@ -33,9 +33,9 @@ private:
     std::string getInodesPath();
     std::string getBlocksPath();
 public:
-    static ConfigLoader* getInstance();
+    static ResourceManager* getInstance();
 
-    explicit ConfigLoader(std::string path);
+    explicit ResourceManager(std::string path);
     int getBlocksBitmap();
     int getInodesBitmap();
     int getInodes();

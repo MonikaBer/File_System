@@ -2,7 +2,7 @@
 #include <fstream>
 #include <cmath>
 #include "SimpleFS.hpp"
-#include "ConfigLoader.hpp"
+#include "ResourceManager.hpp"
 #include <functional>
 #include "Lock.hpp"
 #include <unistd.h>
@@ -74,13 +74,13 @@ int SimpleFS::_read(int fd, char * buf, int len) {
     std::shared_ptr<INode> inode = fdr.getInode();
     unsigned totalRead = 0;
 
-    int blocksFile = ConfigLoader::getInstance()->getBlocks();
+    int blocksFile = ResourceManager::getInstance()->getBlocks();
 
     // if trying to read more than left in file, cut len so it stops on end of file
     if (len + cursor > inode->getLength())
         len = inode->getLength() - cursor;
 
-    int blockSize = ConfigLoader::getInstance()->getSizeOfBlock();
+    int blockSize = ResourceManager::getInstance()->getSizeOfBlock();
     while (len) {
         // calculate host file offset
         unsigned iNodeBlockIndex = cursor / blockSize;
@@ -222,7 +222,7 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
 }
 
 int SimpleFS::findFreeInode() {
-    int input = ConfigLoader::getInstance()->getInodesBitmap();
+    int input = ResourceManager::getInstance()->getInodesBitmap();
     size_t sizeOfLine = 0;
     char * line = NULL;
     FILE *stream = fdopen(input, "wb+");
@@ -254,7 +254,7 @@ int SimpleFS::findFreeInode() {
  * @return 
  */
 int SimpleFS::clearInode(FileDescriptor &fd) {
-    int bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
+    int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
     lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
     char byte;
     read(bitmapfs, &byte, 1);
@@ -266,7 +266,7 @@ int SimpleFS::clearInode(FileDescriptor &fd) {
 }
 
 int SimpleFS::clearInode(unsigned inode) {
-    int bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
+    int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
     lseek(bitmapfs, inode/8, SEEK_SET);
     char byte;
     read(bitmapfs, &byte, 1);

@@ -1,4 +1,4 @@
-#include "ConfigLoader.hpp"
+#include "ResourceManager.hpp"
 #include <map>
 #include <sstream>
 #include <cmath>
@@ -8,9 +8,9 @@
 
 #include "INode.hpp"
 
-ConfigLoader ConfigLoader::loader("../etc/simplefs.conf");
+ResourceManager ResourceManager::loader("../etc/simplefs.conf");
 
-ConfigLoader::ConfigLoader(std::string path)
+ResourceManager::ResourceManager(std::string path)
 {
     std::fstream input(path);
     if(!input.is_open())
@@ -33,80 +33,80 @@ ConfigLoader::ConfigLoader(std::string path)
     openFile(INODES, getInodesPath());
 }
 
-void ConfigLoader::openFile(FdNames type, std::string path){
-    hostFd[type] = open(path.data(), O_RDWR);
+void ResourceManager::openFile(FdNames type, std::string path){
+    hostFd[type] = open(path.data(), O_RDWR);`
 }
 
-ConfigLoader* ConfigLoader::getInstance(){
+ResourceManager* ResourceManager::getInstance(){
     return &loader;
 }
 
-void ConfigLoader::strip(std::string& string, const std::string& characters_to_avoid){
+void ResourceManager::strip(std::string& string, const std::string& characters_to_avoid){
     left_strip(string, characters_to_avoid);
     right_strip(string, characters_to_avoid);
 }
 
-void ConfigLoader::left_strip(std::string& string, const std::string& charactersToAvoid){
+void ResourceManager::left_strip(std::string& string, const std::string& charactersToAvoid){
     string.erase(0, string.find_first_not_of(charactersToAvoid));
 }
 
-void ConfigLoader::right_strip(std::string& string, const std::string& charactersToAvoid){
+void ResourceManager::right_strip(std::string& string, const std::string& charactersToAvoid){
     string.erase(string.find_last_not_of(charactersToAvoid)+1, string.size());
 }
 
-std::string ConfigLoader::getBlocksBitmapPath(){
+std::string ResourceManager::getBlocksBitmapPath(){
     return map["blocks bitmap path"];
 }
 
-std::string ConfigLoader::getInodesBitmapPath(){
+std::string ResourceManager::getInodesBitmapPath(){
     return map["inodes bitmap path"];
 }
 
-std::string ConfigLoader::getInodesPath(){
+std::string ResourceManager::getInodesPath(){
     return map.at("inodes path");
 }
 
-std::string ConfigLoader::getBlocksPath(){
+std::string ResourceManager::getBlocksPath(){
     return map["blocks path"];
 }
 
-int ConfigLoader::getMaxNumberOfBlocks() {
+int ResourceManager::getMaxNumberOfBlocks() {
     return std::stoi(map["max number of blocks"]);
 }
 
-int ConfigLoader::getMaxNumberOfInodes() {
+int ResourceManager::getMaxNumberOfInodes() {
     return std::stoi(map["max number of inodes"]);
 }
 
-int ConfigLoader::getMaxLengthOfName() {
+int ResourceManager::getMaxLengthOfName() {
     return std::stoi(map["max length of name"]);
 }
 
-int ConfigLoader::getBlocksBitmap() {
+int ResourceManager::getBlocksBitmap() {
     int fd = hostFd[BLOCKS_BITMAP];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getInodesBitmap() {
+int ResourceManager::getInodesBitmap() {
     int fd = hostFd[INODES_BITMAP];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getInodes() {
+int ResourceManager::getInodes() {
     int fd = hostFd[INODES];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getBlocks() {
+int ResourceManager::getBlocks() {
     int fd = hostFd[BLOCKS];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getSizeOfBlock() {
+int ResourceManager::getSizeOfBlock() {
     return sizeOfBlock;
 }
 
@@ -118,7 +118,7 @@ int ConfigLoader::getSizeOfBlock() {
  *
  * @return
  */
-int ConfigLoader::createSystemFiles() {
+int ResourceManager::createSystemFiles() {
     // TODO name is kinda unfortunate - not always creates, only when needed.
     // TODO creating single file is pointless - losing blocks/inodes renders whole filesystem
     // TODO lost bitmaps could be rebuilt if freed block/inode would have its data overwritten with zeroes
@@ -133,7 +133,7 @@ int ConfigLoader::createSystemFiles() {
         createInodesFile(getInodesPath());
 }
 
-inline bool ConfigLoader::fileExists (const std::string& path) {
+inline bool ResourceManager::fileExists (const std::string& path) {
     if (FILE *file = fopen(path.c_str(), "r")) {
         fclose(file);
         return true;
@@ -142,7 +142,7 @@ inline bool ConfigLoader::fileExists (const std::string& path) {
     }
 }
 
-int ConfigLoader::createBitmapFile(const std::string &path, int numberOfBits) {
+int ResourceManager::createBitmapFile(const std::string &path, int numberOfBits) {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
@@ -158,7 +158,7 @@ int ConfigLoader::createBitmapFile(const std::string &path, int numberOfBits) {
  * @param path - path where file will be created
  * @return
  */
-int ConfigLoader::createInodesFile(const std::string &path) {
+int ResourceManager::createInodesFile(const std::string &path) {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
@@ -172,7 +172,7 @@ int ConfigLoader::createInodesFile(const std::string &path) {
  * @param path - path where file will be created
  * @return
  */
-int ConfigLoader::createBlocksFile(const std::string &path) {
+int ResourceManager::createBlocksFile(const std::string &path) {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
@@ -186,8 +186,8 @@ int ConfigLoader::createBlocksFile(const std::string &path) {
  * @return 0 - no free blocks found
  * @return positive number - block number
  */
-unsigned ConfigLoader::getFreeBlock() {
-    int bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+unsigned ResourceManager::getFreeBlock() {
+    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
     unsigned block = 0;
     unsigned char byte;
     bool looking = true;
@@ -221,7 +221,7 @@ unsigned ConfigLoader::getFreeBlock() {
  * @param block - block number
  * @return
  */
-int ConfigLoader::freeBlock(unsigned int block) {
+int ResourceManager::freeBlock(unsigned int block) {
     // TODO in any way doesnt check who is the owner of this block! - should it be changed?
     // TODO should data be cleared?
     // TODO return values + doc
@@ -229,7 +229,7 @@ int ConfigLoader::freeBlock(unsigned int block) {
         return -1;
     }
 
-    int bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
     lseek(bitmapfs, block/8, SEEK_SET);
     char byte;
     read(bitmapfs, &byte, 1);

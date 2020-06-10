@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <array>
-#include "ConfigLoader.hpp"
+#include "ResourceManager.hpp"
 #include <fstream>
 #include <vector>
 

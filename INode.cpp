@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 void INode::loadInode(INode* en, int inodeId){
-    int inodesFileDescriptor = ConfigLoader::getInstance()->getInodes();
+    int inodesFileDescriptor = ResourceManager::getInstance()->getInodes();
     unsigned int inode_position = inodeId * sizeofInode;
     lseek(inodesFileDescriptor, 0, SEEK_END);
     if(lseek(inodesFileDescriptor, 0, SEEK_CUR) < inode_position + sizeofInode)
@@ -21,7 +21,7 @@ void INode::loadInode(INode* en, int inodeId){
 }
 
 void INode::saveInode(const INode* en){
-    int inodesFileDescriptor = ConfigLoader::getInstance()->getInodes();
+    int inodesFileDescriptor = ResourceManager::getInstance()->getInodes();
     lseek(inodesFileDescriptor, en->getId()*sizeofInode, SEEK_SET);
     write(inodesFileDescriptor, (char*)&(en->mode), sizeof(en->mode));
     write(inodesFileDescriptor, (char*)&(en->length), sizeof(en->length));
@@ -34,12 +34,12 @@ INode::INode(unsigned int id, unsigned short mode, long length, unsigned int num
                 : inode_id(id), mode(mode), length(length), number_of_blocks(numberOfBlocks), indirect_block(indirectBlock) {}
 
 INode::INode(unsigned id): inode_id(id) {
-    ConfigLoader * config = ConfigLoader::getInstance();
+    ResourceManager * config = ResourceManager::getInstance();
     loadInode(this, id);
 }
 
 /**
- * Adds block of data to iNode. Block can be acquired by ConfigLoader::getInstance()->getFreeBlock().
+ * Adds block of data to iNode. Block can be acquired by ResourceManager::getInstance()->getFreeBlock().
  *
  * @param block - block index
  * @return
@@ -50,9 +50,9 @@ int INode::addBlock(unsigned int block) {
     }
     else {
         if (indirect_block == 0) {
-            indirect_block = ConfigLoader::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos
+            indirect_block = ResourceManager::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos
         }
-        int blocksFile = ConfigLoader::getInstance()->getBlocks();
+        int blocksFile = ResourceManager::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 12) * sizeof(unsigned);
         lseek(blocksFile, host_file_offset, SEEK_SET);
         write(blocksFile, (char*)&block, sizeof(unsigned));
@@ -63,18 +63,18 @@ int INode::addBlock(unsigned int block) {
 
 int INode::removeBlock() {
     if(number_of_blocks <= 12) {
-        ConfigLoader::getInstance()->freeBlock(blocks[number_of_blocks - 1]);
+        ResourceManager::getInstance()->freeBlock(blocks[number_of_blocks - 1]);
         blocks[number_of_blocks - 1] = 0;
     }
     else {
-        int blocksFile = ConfigLoader::getInstance()->getBlocks();
+        int blocksFile = ResourceManager::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 13) * sizeof(unsigned);
         lseek(blocksFile, host_file_offset, SEEK_SET);
         unsigned block;
         read(blocksFile, (char*)&block, sizeof(unsigned));
-        ConfigLoader::getInstance()->freeBlock(block);
+        ResourceManager::getInstance()->freeBlock(block);
         if (number_of_blocks == 13) {
-            ConfigLoader::getInstance()->freeBlock(indirect_block);
+            ResourceManager::getInstance()->freeBlock(indirect_block);
             indirect_block = 0;     // TODO Artur zwolnij z tego locka czy cos nie znam sie XD
         }
     }
@@ -94,7 +94,7 @@ std::map<std::string, unsigned> INode::getDirectoryContent() {
 
     std::map<std::string, unsigned> dir_content;
     std::vector<char> inode_content = getContent();
-    ConfigLoader * config = ConfigLoader::getInstance();
+    ResourceManager * config = ResourceManager::getInstance();
     int maxFileName = config->getMaxLengthOfName();
     for(unsigned long i=0; i<length; i += maxFileName+sizeof(unsigned)){
             std::string name = (inode_content.data() + i);
@@ -106,7 +106,7 @@ std::map<std::string, unsigned> INode::getDirectoryContent() {
 }
 
 std::vector<char> INode::getContent() {
-    ConfigLoader * config = ConfigLoader::getInstance();
+    ResourceManager * config = ResourceManager::getInstance();
     int blocks_stream = config->getBlocks();
     int sizeOfBlock = config->getSizeOfBlock();
     std::vector<char> content;
@@ -135,7 +135,7 @@ unsigned int INode::getId() const {
 
 void INode::saveINodeInDirectory(std::string newFileName, INode newFileInode) {
     addFileToDirectory(newFileName, newFileInode);
-    ConfigLoader * config = ConfigLoader::getInstance();
+    ResourceManager * config = ResourceManager::getInstance();
     saveInode(&newFileInode);
 }
 
@@ -163,7 +163,7 @@ std::array<char, INode::sizeofInode> INode::serialize() {
 }
 
 void INode::addFileToDirectory(std::string newFileName, INode inode) {
-    ConfigLoader* loader = ConfigLoader::getInstance();
+    ResourceManager* loader = ResourceManager::getInstance();
     if(newFileName.size() > loader->getMaxLengthOfName())
         throw std::runtime_error("Bad length of file name");
     int blocks = loader->getBlocks();
@@ -194,7 +194,7 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
  * @return
  */
 int INode::writeInode() {
-    ConfigLoader* loader = ConfigLoader::getInstance();
+    ResourceManager* loader = ResourceManager::getInstance();
     saveInode(this);
     // update bitmap
     // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
@@ -209,7 +209,7 @@ int INode::writeInode() {
 }
 
 int INode::writeToFile(char *buffer, int size, long fileCursor) {
-    ConfigLoader * config = ConfigLoader::getInstance();
+    ResourceManager * config = ResourceManager::getInstance();
     int blocks_stream = config->getBlocks();
     const int sizeOfBlock = config->getSizeOfBlock();
     long positionInBlock = fileCursor%sizeOfBlock;
