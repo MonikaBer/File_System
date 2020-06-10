@@ -41,3 +41,6 @@ build
 cmake-build-debug
 .idea
 *.swp
+
+# whole filesystem is not copied to git
+etc/config/*

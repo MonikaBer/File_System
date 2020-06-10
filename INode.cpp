@@ -37,36 +37,53 @@ INode::INode(unsigned id): inode_id(id) {
     inodes >> std::shared_ptr<INode>(this);
 }
 
+/**
+ * Adds block of data to iNode. Block can be acquired by ConfigLoader::getInstance()->getFreeBlock().
+ *
+ * @param block - block index
+ * @return
+ */
 int INode::addBlock(unsigned int block) {
-    auto it = std::find(blocks.begin(), blocks.end(), 0);
-    if (it == blocks.end()) {
-        // TODO implement adding more than 12 blocks
-        if (indirect_block == 0) {
-            // TODO get block for your use
-        } else {
-            // TODO HOW DO I READ FROM FILES??? std::fstream blocks(blocks, std::ios::binary | std::ios::in | std::ios::out);
-        }
-        return -123;
+    if(number_of_blocks < 12) {
+        blocks[number_of_blocks] = block;
     }
     else {
-        *it = block;
+        if (indirect_block == 0) {
+            indirect_block = ConfigLoader::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos
+        }
+        std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
+        unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 12) * sizeof(unsigned);
+        blocksFile.seekp(host_file_offset);
+        blocksFile.write((char*)&block, sizeof(unsigned));
     }
+    number_of_blocks++;
     return 0;
 }
 
-int INode::removeBlock(unsigned int block) {
-    auto it = std::remove(blocks.begin(), blocks.end(), block);
-    if (it == blocks.end())
-        // TODO implement adding more than 12 blocks
-        return -123;
-    else {
-        *it = 0;    // will not work if std::removes removes more than one value, but that means inode was corrupted
+int INode::removeBlock() {
+    if(number_of_blocks <= 12) {
+        ConfigLoader::freeBlock(blocks[number_of_blocks - 1]);
+        blocks[number_of_blocks - 1] = 0;
     }
+    else {
+        std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
+        unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 13) * sizeof(unsigned);
+        blocksFile.seekg(host_file_offset);
+        unsigned block;
+        blocksFile.read((char*)&block, sizeof(unsigned ));
+        ConfigLoader::freeBlock(block);
+        if (number_of_blocks == 13) {
+            ConfigLoader::freeBlock(indirect_block);
+            indirect_block = 0;     // TODO Artur zwolnij z tego locka czy cos nie znam sie XD
+        }
+    }
+    number_of_blocks--;
     return 0;
 }
 
 int INode::freeAllBlocks() {
-    // TODO Implement
+    while (number_of_blocks > 0)
+        removeBlock();
     return 0;
 }
 
@@ -125,12 +142,12 @@ void INode::save(INode newFileInode) {
     blocksStream << std::make_shared<INode>(newFileInode);
 }
 
-void INode::seekEnd(std::fstream &blocksStream) {
-    unsigned lastBlock = length / ConfigLoader::getInstance()->getSizeOfBlock();
-    unsigned positionInLastBlock = length % ConfigLoader::getInstance()->getSizeOfBlock();
-    unsigned lastBlockAddress = blocks[lastBlock];
-    blocksStream.seekg(lastBlock*ConfigLoader::getInstance()->getSizeOfBlock() + positionInLastBlock);
-}
+//void INode::seekEnd(std::fstream &blocksStream) {
+//    unsigned lastBlock = length / ConfigLoader::getInstance()->getSizeOfBlock();
+//    unsigned positionInLastBlock = length % ConfigLoader::getInstance()->getSizeOfBlock();
+//    unsigned lastBlockAddress = blocks[lastBlock];
+//    blocksStream.seekg(lastBlock*ConfigLoader::getInstance()->getSizeOfBlock() + positionInLastBlock);
+//}
 
 std::array<char, INode::sizeofInode> INode::serialize() {
     std::array<char, sizeofInode> INodeBytes = {0};

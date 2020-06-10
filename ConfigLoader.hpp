@@ -47,6 +47,8 @@ public:
     int getMaxLengthOfName() const;
     int getSizeOfBlock() const;
 
+    unsigned getFreeBlock();
+    static int freeBlock(unsigned block);
 };
 
 #endif

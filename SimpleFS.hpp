@@ -20,12 +20,11 @@ private:
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
 public: //TODO: Change to private
-    //int writeInode(FileDescriptor& fd);
-    //INode readInode(FileDescriptor& fd);
-    //INode readInode(int inodeNumber);
+    int writeInode(FileDescriptor& fd);
+    INode readInode(FileDescriptor& fd);
+    std::shared_ptr<INode> readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
-    unsigned getFreeBlock();
-    int freeBlock(unsigned block);
+    int clearInode(unsigned inode);
     INode getTargetDirectory(const std::vector<std::string> &path);
 
 public:
