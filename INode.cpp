@@ -6,11 +6,11 @@
 
 //methods definitions
 std::fstream& operator>>(std::fstream &is, std::shared_ptr<INode> iNode) {
-    is.read((char*)iNode->mode, sizeof(iNode->mode));
-    is.read((char*)iNode->length, sizeof(iNode->length));
-    is.read((char*)iNode->number_of_blocks, sizeof(iNode->number_of_blocks));
+    is.read((char*)&(iNode->mode), sizeof(iNode->mode));
+    is.read((char*)&(iNode->length), sizeof(iNode->length));
+    is.read((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
     is.read((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    is.read((char*)iNode->indirect_block, sizeof(iNode->indirect_block));
+    is.read((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
     return is;
 }
 
@@ -27,6 +27,12 @@ std::fstream & operator<<(std::fstream &os, const std::shared_ptr<INode> iNode) 
 INode::INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock)
                 : inode_id(id), mode(mode), length(length), number_of_blocks(numberOfBlocks), indirect_block(indirectBlock) {}
 
+/**
+ * Adds block of data to iNode. Block can be acquired by ConfigLoader::getInstance()->getFreeBlock().
+ *
+ * @param block - block index
+ * @return
+ */
 int INode::addBlock(unsigned int block) {
     if(number_of_blocks < 12) {
         blocks[number_of_blocks] = block;
@@ -46,6 +52,7 @@ int INode::addBlock(unsigned int block) {
 
 int INode::removeBlock() {
     if(number_of_blocks <= 12) {
+        ConfigLoader::freeBlock(blocks[number_of_blocks - 1]);
         blocks[number_of_blocks - 1] = 0;
     }
     else {

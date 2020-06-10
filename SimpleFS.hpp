@@ -22,8 +22,9 @@ private:
 public: //TODO: Change to private
     int writeInode(FileDescriptor& fd);
     INode readInode(FileDescriptor& fd);
-    INode readInode(int inodeNumber);
+    std::shared_ptr<INode> readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);
+    int clearInode(unsigned inode);
     INode getTargetDirectory(const std::vector<std::string> &path);
 
 public:
