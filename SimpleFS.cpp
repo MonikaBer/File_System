@@ -39,7 +39,7 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
 }
 
 
-int SimpleFS::open(std::string && path, int mode) {
+int SimpleFS::_open(std::string && path, int mode) {
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;
@@ -64,7 +64,7 @@ int SimpleFS::open(std::string && path, int mode) {
 }
 
 
-int SimpleFS::read(int fd, char * buf, int len) {
+int SimpleFS::_read(int fd, char * buf, int len) {
     // TODO not tested!
     if ( fd >= fds.size() )
         return -1;
@@ -111,7 +111,7 @@ int SimpleFS::_write(int fd, char * buf, int len) {
 }
 
 
-int SimpleFS::lseek(int fd, int whence, int offset) {
+int SimpleFS::_lseek(int fd, int whence, int offset) {
     // TODO not tested!
     if ( fd >= fds.size() )
         return 0; // TODO what to return if error? both positive and negative numbers are taken!
@@ -276,4 +276,3 @@ int SimpleFS::clearInode(unsigned inode) {
 
     // TODO return errors ( + doc)
 }
-

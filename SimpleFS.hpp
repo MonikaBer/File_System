@@ -32,10 +32,10 @@ public: //TODO: Change to private
 
 public:
     int create(std::string && path, unsigned short mode);
-    int open(std::string && name, int mode);
-    int read(int fd, char * buf, int len);
+    int _open(std::string && name, int mode);
+    int _read(int fd, char * buf, int len);
     int _write(int fd, char * buf, int len);
-    int lseek(int fd, int whence, int offset);
+    int _lseek(int fd, int whence, int offset);
     int unlink(std::string && name);
     int mkdir(std::string && name);
     int rmdir(std::string && name);

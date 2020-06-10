@@ -9,11 +9,11 @@ static SimpleFS simpleFS = SimpleFS();
     }
 
     int open(char * name, int mode) {
-        return simpleFS.open(name, mode);
+        return simpleFS._open(name, mode);
     }
 
     int read(int fd, char * buf, int len) { 
-       return simpleFS.read(fd, buf, len);
+       return simpleFS._read(fd, buf, len);
     }
 
     int write(int fd, char * buf, int len) {
@@ -21,7 +21,7 @@ static SimpleFS simpleFS = SimpleFS();
     }
 
     int lseek(int fd, int whence, int offset) {
-        return simpleFS.lseek(fd, whence, offset);
+        return simpleFS._lseek(fd, whence, offset);
     }
 
     int unlink(char * name) {
