@@ -34,7 +34,7 @@ ResourceManager::ResourceManager(std::string path)
 }
 
 void ResourceManager::openFile(FdNames type, std::string path){
-    hostFd[type] = open(path.data(), O_RDWR);`
+    hostFd[type] = open(path.data(), O_RDWR);
 }
 
 ResourceManager* ResourceManager::getInstance(){
