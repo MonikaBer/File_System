@@ -32,7 +32,6 @@ public:
     std::array<char, sizeofInode> serialize();
 
     // TODO public for testing
-    static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
     int freeAllBlocks();
     unsigned int getId() const;
 
