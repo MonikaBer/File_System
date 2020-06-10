@@ -181,7 +181,7 @@ int SimpleFS::mkdir(std::string && path) {
     if(freeInodeId < 0)
         return -1;
     INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
-    targetDirINode.save(newDirName, newDir);
+    targetDirINode.saveINodeInDirectory(newDirName, newDir);
 
     return -1;
 }
