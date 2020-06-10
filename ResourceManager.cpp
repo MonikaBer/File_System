@@ -26,15 +26,7 @@ ResourceManager::ResourceManager(std::string path)
         strip(value);
         map[key] = value;
     }
-    createSystemFiles();
-    openFile(BLOCKS_BITMAP, getBlocksBitmapPath());
-    openFile(INODES_BITMAP, getInodesBitmapPath());
-    openFile(BLOCKS, getBlocksPath());
-    openFile(INODES, getInodesPath());
-}
-
-void ResourceManager::openFile(FdNames type, std::string path){
-    hostFd[type] = open(path.data(), O_RDWR);
+    processSystemFiles();
 }
 
 ResourceManager* ResourceManager::getInstance(){
@@ -111,73 +103,46 @@ int ResourceManager::getSizeOfBlock() {
 }
 
 /**
- * Checks for existence of 4 essential files and creates them if they don't exist.
+ * Checks for existence of 4 essential files by opening them and creates them if all of them don't exist, otherwise throws.
  *
  * WARNING: losing inodes/blocks file renders whole filesystem useless. Creating empty files is only reasonable if
  * filesystem is being created!
  *
  * @return
  */
-int ResourceManager::createSystemFiles() {
-    // TODO name is kinda unfortunate - not always creates, only when needed.
-    // TODO creating single file is pointless - losing blocks/inodes renders whole filesystem
+int ResourceManager::processSystemFiles() {
     // TODO lost bitmaps could be rebuilt if freed block/inode would have its data overwritten with zeroes
-    // blocks bitmap file
-    if (!fileExists(getBlocksBitmapPath()))
-        createBitmapFile(getBlocksBitmapPath(), getMaxNumberOfBlocks());
-    if (!fileExists(getInodesBitmapPath()))
-        createBitmapFile(getInodesBitmapPath(), getMaxNumberOfInodes());
-    if (!fileExists(getBlocksPath()))
-        createBlocksFile(getBlocksPath());
-    if (!fileExists(getInodesPath()))
-        createInodesFile(getInodesPath());
-}
-
-inline bool ResourceManager::fileExists (const std::string& path) {
-    if (FILE *file = fopen(path.c_str(), "r")) {
-        fclose(file);
-        return true;
-    } else {
-        return false;
+    int successfulOpensCounter = 0;
+    successfulOpensCounter += openFile(BLOCKS_BITMAP, getBlocksBitmapPath());
+    successfulOpensCounter += openFile(INODES_BITMAP, getInodesBitmapPath());
+    successfulOpensCounter += openFile(BLOCKS, getBlocksPath());
+    successfulOpensCounter += openFile(INODES, getInodesPath());
+    if(successfulOpensCounter == 0){
+        createFile(BLOCKS_BITMAP, getBlocksBitmapPath(), getMaxNumberOfBlocks());
+        createFile(INODES_BITMAP, getInodesBitmapPath(), getMaxNumberOfInodes());
+        createFile(BLOCKS, getBlocksPath(), getMaxNumberOfBlocks() * sizeOfBlock - 1);
+        createFile(INODES, getInodesPath(), getMaxNumberOfInodes()* INode::sizeofInode - 1);
+        INode root(0, 1, 0, 0, 0);
+        root.writeInode();
     }
+    else if(successfulOpensCounter != 4)
+        throw std::runtime_error("There must be all SimpleFS files or none");
 }
 
-int ResourceManager::createBitmapFile(const std::string &path, int numberOfBits) {
-    std::ofstream ofs(path, std::ios::binary);
-    if(!ofs.is_open())
-        throw std::runtime_error("Cannot open file of path " + path);
-    char reserved = 1;
-    ofs.write(&reserved, 1);        // reserve bit [0] for root
-    ofs.seekp(ceil(numberOfBits/8.0) - 1);
-    ofs.write("", 1);
+bool ResourceManager::openFile(FdNames type, std::string path){
+    int openFileDescriptor = open(path.data(), O_RDWR);
+    if(openFileDescriptor == -1)
+        return false;
+    hostFd[type] = openFileDescriptor;
+    return true;
 }
 
-/**
- * Creates empty file big enough to hold all INodes of SimpleFS.
- *
- * @param path - path where file will be created
- * @return
- */
-int ResourceManager::createInodesFile(const std::string &path) {
-    std::ofstream ofs(path, std::ios::binary);
-    if(!ofs.is_open())
-        throw std::runtime_error("Cannot open file of path " + path);
-    ofs.seekp(getMaxNumberOfInodes()* INode::sizeofInode - 1);
-    ofs.write("", 1);
-}
-
-/**
- * Creates empty file big enough to hold all blocks of SimpleFS.
- *
- * @param path - path where file will be created
- * @return
- */
-int ResourceManager::createBlocksFile(const std::string &path) {
-    std::ofstream ofs(path, std::ios::binary);
-    if(!ofs.is_open())
-        throw std::runtime_error("Cannot open file of path " + path);
-    ofs.seekp(getMaxNumberOfBlocks() * sizeOfBlock - 1);
-    ofs.write("", 1);
+void ResourceManager::createFile(ResourceManager::FdNames type, const std::string &path, int initialSize) {
+    int fileDescriptor = open(path.c_str(), O_CREAT | O_RDWR, 0666); //TODO: Write for others not working (mode bug)
+    if(fileDescriptor == -1)
+        throw std::runtime_error("Cannot create file of path " + path);
+    ftruncate(fileDescriptor, initialSize);
+    hostFd[type] = fileDescriptor;
 }
 
 /**
@@ -194,7 +159,7 @@ unsigned ResourceManager::getFreeBlock() {
     while (looking) {
         read(bitmapfs, (char*)&byte, 1);
         if(byte == EOF)
-            return 0;
+            throw std::runtime_error("Couldn't find free block");
         if (byte == 255) {    // all blocks taken
             block += 8;
             continue;
@@ -228,7 +193,6 @@ int ResourceManager::freeBlock(unsigned int block) {
     if (block == 0) {   // never free root block!
         return -1;
     }
-
     int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
     lseek(bitmapfs, block/8, SEEK_SET);
     char byte;

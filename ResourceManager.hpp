@@ -22,11 +22,9 @@ private:
     void left_strip(std::string& string, const std::string& characters_to_avoid);
     void right_strip(std::string& string, const std::string& characters_to_avoid);
 
-    int createSystemFiles();
-    int createBitmapFile(const std::string& path, int numberOfBits);
-    int createInodesFile(const std::string& path);
-    int createBlocksFile(const std::string& path);
-    inline bool fileExists (const std::string& name);
+    int processSystemFiles();
+    bool openFile(FdNames type, std::string path);
+    void createFile(FdNames type, const std::string& path, int initialSize);
 
     std::string getBlocksBitmapPath();
     std::string getInodesBitmapPath();
@@ -47,8 +45,6 @@ public:
 
     unsigned getFreeBlock();
     int freeBlock(unsigned block);
-
-    void openFile(FdNames type, std::string path);
 };
 
 #endif

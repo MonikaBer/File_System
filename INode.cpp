@@ -50,7 +50,7 @@ int INode::addBlock(unsigned int block) {
     }
     else {
         if (indirect_block == 0) {
-            indirect_block = ResourceManager::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos
+            indirect_block = ResourceManager::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos xD
         }
         int blocksFile = ResourceManager::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 12) * sizeof(unsigned);
@@ -89,9 +89,8 @@ int INode::freeAllBlocks() {
 }
 
 std::map<std::string, unsigned> INode::getDirectoryContent() {
-//    if(!mode)
-//        throw std::runtime_error("INode is not a directory");
-
+    if(!mode)
+        throw std::runtime_error("INode is not a directory");
     std::map<std::string, unsigned> dir_content;
     std::vector<char> inode_content = getContent();
     ResourceManager * config = ResourceManager::getInstance();
@@ -166,21 +165,26 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     ResourceManager* loader = ResourceManager::getInstance();
     if(newFileName.size() > loader->getMaxLengthOfName())
         throw std::runtime_error("Bad length of file name");
-    int blocks = loader->getBlocks();
+    int blocksFd = loader->getBlocks();
     unsigned positionInBlock = length%loader->getSizeOfBlock();
     unsigned blockId = length/loader->getSizeOfBlock();
-    char *savedFileName = new char[loader->getMaxLengthOfName()];
-    newFileName.copy(savedFileName, newFileName.size());
-    if(newFileName.size() != loader->getMaxLengthOfName())
-        savedFileName[newFileName.size()] = 0;
-    for (int i = newFileName.size(); i < loader->getMaxLengthOfName(); i++) {
-        savedFileName[i] = 0;
+    int blockAddress;
+    try {
+        blockAddress = getBlock(blockId);
     }
+    catch(std::runtime_error e){
+        if(strcmp(e.what(), "Block of that index uninitialized") == 0) {
+            unsigned freeBlock = loader->getFreeBlock();
+            addBlock(freeBlock);
+            blockAddress = freeBlock;
+        } else
+            throw e;
+    }
+    newFileName.resize(loader->getMaxLengthOfName(), 0);
     unsigned inodeId = inode.getId();
-    lseek(blocks, getBlock(blockId)*loader->getSizeOfBlock()+positionInBlock, SEEK_SET);
-    write(blocks, savedFileName, loader->getMaxLengthOfName());
-    write(blocks, (char*)&(inodeId), sizeof(inodeId));
-    delete savedFileName;
+    lseek(blocksFd, blockAddress*loader->getSizeOfBlock()+positionInBlock, SEEK_SET);
+    write(blocksFd, newFileName.c_str(), loader->getMaxLengthOfName());
+    write(blocksFd, (char*)&(inodeId), sizeof(inodeId));
     length += loader->getMaxLengthOfName() + sizeof(inodeId);
     writeInode();
 }
@@ -216,13 +220,17 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
     int saved = 0;
 
     for(int blockIndex = fileCursor/sizeOfBlock; size > 0; blockIndex++){
-        int blockAddress = blocks[blockIndex];
-
-        if (blockAddress == 0) {
-            unsigned freeBlock = config->getFreeBlock();
-            if (freeBlock == 0) throw std::runtime_error("COULDNT FIND FREE BLOCK");
-            blocks[blockIndex] = freeBlock;
-            blockAddress = blocks[blockIndex];
+        int blockAddress;
+        try {
+            blockAddress = getBlock(blockIndex);
+        }
+        catch(std::runtime_error e) {
+            if(strcmp(e.what(), "Block of that index uninitialized") == 0) {
+                unsigned freeBlock = config->getFreeBlock();
+                addBlock(freeBlock);
+                blockAddress = freeBlock;
+            } else
+                throw e;
         }
         lseek(blocks_stream, blockAddress*sizeOfBlock+positionInBlock, SEEK_SET);
         int remainingSizeOfBlock = sizeOfBlock-positionInBlock;
@@ -242,3 +250,11 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
         length = fileCursor + saved;
     return saved;
 }
+
+unsigned INode::getBlock(unsigned index) const {
+    if(index>=blocks.size())
+        throw std::runtime_error("Not possible to get block of that index"); //TODO: Make reference to indirect block
+    if(index >= number_of_blocks)
+        throw std::runtime_error("Block of that index uninitialized");
+    return blocks[index];
+};

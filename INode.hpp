@@ -36,11 +36,11 @@ public:
 
     //methods declarations
     INode() = default;
-    INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock);
+    INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock); //TODO: Change constructor
     INode(unsigned id); // reads inode from file
     int addBlock(unsigned block);
     int removeBlock();
-    unsigned getBlock(unsigned index) const { if(index<blocks.size()) return blocks[index]; else return 0; };    // error returns 0 because block 0 is reserved for root
+    unsigned getBlock(unsigned index) const;
     long getLength() const { return length; };
 
     int writeToFile(char* buffer, int size, long fileCursor);
