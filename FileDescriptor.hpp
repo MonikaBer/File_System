@@ -22,6 +22,7 @@ public:
     long getFileCursor() const { return fileCursor; }
     Lock::Type getLockType() const { return lockType; }
     void setFileCursor(long fileCursor) { this->fileCursor = fileCursor; }
+
 };
 
 #endif

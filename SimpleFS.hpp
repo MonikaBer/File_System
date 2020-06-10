@@ -26,6 +26,10 @@ public: //TODO: Change to private
     int clearInode(unsigned inode);
     INode getTargetDirectory(const std::vector<std::string> &path);
 
+    const std::vector<FileDescriptor> &getFds() const {
+        return fds;
+    }
+
 public:
     explicit SimpleFS(std::string && configPath);
     int create(std::string && path, unsigned short mode);

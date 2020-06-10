@@ -1,5 +1,6 @@
 //Class representing i-node
 #include <algorithm>
+#include <cstring>
 
 #include "INode.hpp"
 
@@ -96,13 +97,9 @@ std::map<std::string, unsigned> INode::getDirectoryContent() {
     ConfigLoader * config = ConfigLoader::getInstance();
     int maxFileName = config->getMaxLengthOfName();
     for(unsigned long i=0; i<length; i += maxFileName+sizeof(unsigned)){
-            std::string name(inode_content.begin()+i, inode_content.begin()+i+maxFileName);
+            std::string name = (inode_content.data() + i);
             unsigned inode_id = 0;
-            // little endian
-            inode_id += 0xFF000000 & *(inode_content.begin()+i+maxFileName+4) << 24;
-            inode_id += 0x00FF0000 & *(inode_content.begin()+i+maxFileName+3) << 16;
-            inode_id += 0x0000FF00 & *(inode_content.begin()+i+maxFileName+2) << 8;
-            inode_id += 0x000000FF & *(inode_content.begin()+i+maxFileName+1);
+            std::memcpy(&inode_id, inode_content.data()+i+maxFileName, sizeof(unsigned));
             dir_content.insert(std::make_pair(name, inode_id));
     }
     return dir_content;
