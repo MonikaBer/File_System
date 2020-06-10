@@ -3,6 +3,8 @@
 #include <cmath>
 #include "SimpleFS.hpp"
 #include "ConfigLoader.hpp"
+#include <functional>
+#include "Lock.hpp"
 
 SimpleFS::SimpleFS(std::string && configPath) {
     ConfigLoader::init(configPath);
@@ -30,8 +32,27 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
 }
 
 
-int SimpleFS::open(std::string && name, int mode) {
+int SimpleFS::open(std::string && path, int mode) {
+    std::vector<std::string> parsedPath = parseDirect(path);
+    if(parsedPath.empty())
         return -1;
+    std::string fileName = parsedPath.back();
+    parsedPath.pop_back();
+    try{
+        INode targetDirINode = getTargetDirectory(parsedPath);
+        std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
+        std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent[fileName]);
+
+        if (mode == 1)
+            fds.push_back(FileDescriptor(openINode, Lock::WR_LOCK));
+        else
+            fds.push_back(FileDescriptor(openINode, Lock::RD_LOCK));
+
+    } catch(...){
+        return -1;
+    }
+
+    return fds.size()-1;
 }
 
 
