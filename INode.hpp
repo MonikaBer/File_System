@@ -12,7 +12,7 @@ class INode {
 private:
     const static unsigned maxBlocksNo = 12;
 
-    unsigned short mode;
+    unsigned short mode;        //0 - file, 1 - dir
     long length = 0;
     unsigned number_of_blocks = 0;
     std::array<unsigned, maxBlocksNo> blocks = {0};

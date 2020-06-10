@@ -160,12 +160,31 @@ int SimpleFS::unlink(std::string && name) {
 }
 
 
-int SimpleFS::mkdir(std::string && name) {
+int SimpleFS::mkdir(std::string && path) {
+    std::vector<std::string> parsedPath = parseDirect(path);
+    if(parsedPath.empty())
+        return -1;
+    std::string newDirName = parsedPath.back();         //name of new directory
+    parsedPath.pop_back();
+    INode targetDirINode;
+    try {
+        targetDirINode = getTargetDirectory(parsedPath);    //parent directory for new directory
+    } catch (...) {
+        return -1;
+    }
+    int freeInodeId = findFreeInode();
+    if(freeInodeId < 0)
+        return -1;
+    INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
+    targetDirINode.save(newDirName, newDir);
+
     return -1;
 }
 
 
 int SimpleFS::rmdir(std::string && name) {
+
+
     return -1;
 }
 
