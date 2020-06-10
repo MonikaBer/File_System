@@ -27,6 +27,11 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
     int freeInodeId = findFreeInode();
     if(freeInodeId < 0)
         return -1;
+
+    std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
+    if(dirContent.find(newFileName) != dirContent.end())
+        return -1;
+
     INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newFileName, newFile);
     // todo locks xdd
