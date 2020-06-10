@@ -164,9 +164,14 @@ int SimpleFS::findFreeInode() {
     if(free_inode_byte == std::string::npos)
         return -1;
 
+    char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
-    while((line[free_inode_byte]<<id) & 0x80)
+    while((byteWithFreeINode>>id) & 0x1)
         ++id;
+
+    byteWithFreeINode |= 1<<id;
+    input.seekp(free_inode_byte);
+    input.write((char*)&byteWithFreeINode, 1);
 
     input.close();
     return 8*free_inode_byte+id;
