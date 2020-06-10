@@ -136,13 +136,12 @@ unsigned int INode::getId() const {
     return inode_id;
 }
 
-void INode::save(std::string newFileName, INode newFileInode) {
+void INode::saveINodeInDirectory(std::string newFileName, INode newFileInode) {
     addFileToDirectory(newFileName, newFileInode);
     ConfigLoader * config = ConfigLoader::getInstance();
     std::fstream & inodes = config->getInodes();
     inodes.seekg(newFileInode.getId()*sizeofInode);
     inodes << std::make_shared<INode>(newFileInode);
-    std::fstream &inodesBitmap = config->getInodesBitmap();
 }
 
 std::array<char, INode::sizeofInode> INode::serialize() {
@@ -216,4 +215,27 @@ int INode::writeInode() {
     inodesBitmap.seekp(getId()/8);
     inodesBitmap.write(&byte, 1);
     // TODO return errors ( + doc)
+}
+
+void INode::writeToFile(char *buffer, int size, long fileCursor) {
+    ConfigLoader * config = ConfigLoader::getInstance();
+    std::fstream & blocks_stream = config->getBlocks();
+    const int sizeOfBlock = config->getSizeOfBlock();
+    long positionInBlock = fileCursor%sizeOfBlock;
+    int saved = 0;
+    for(int blockIndex = fileCursor/sizeOfBlock; size > 0; blockIndex++){
+        int blockAddress = blocks[blockIndex];
+        blocks_stream.seekg(blockAddress*sizeOfBlock+positionInBlock);
+        int remainingSizeOfBlock = sizeOfBlock-positionInBlock;
+        if(remainingSizeOfBlock<=size){ //TODO Check equals
+            blocks_stream.write(buffer + saved, remainingSizeOfBlock);
+            saved += remainingSizeOfBlock;
+            size -= remainingSizeOfBlock;
+        }
+        else {
+            blocks_stream.write(buffer + saved, size);
+            size = 0;
+        }
+        positionInBlock=0;
+    }
 }

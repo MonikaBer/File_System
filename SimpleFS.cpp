@@ -28,7 +28,7 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
     if(freeInodeId < 0)
         return -1;
     INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
-    targetDirINode.save(newFileName, newFile);
+    targetDirINode.saveINodeInDirectory(newFileName, newFile);
     // todo locks xdd
     return 0;
 }
@@ -46,9 +46,9 @@ int SimpleFS::open(std::string && path, int mode) {
         std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent[fileName]);
 
         if (mode == 1)
-            fds.push_back(FileDescriptor(openINode, Lock::WR_LOCK));
+            fds.emplace_back(openINode, Lock::WR_LOCK);
         else
-            fds.push_back(FileDescriptor(openINode, Lock::RD_LOCK));
+            fds.emplace_back(openINode, Lock::RD_LOCK);
 
     } catch(std::runtime_error& e){
         std::cout << e.what();
@@ -101,7 +101,8 @@ int SimpleFS::read(int fd, char * buf, int len) {
 
 
 int SimpleFS::write(int fd, char * buf, int len) {
-    return -1;
+    FileDescriptor descriptor = fds[fd];
+    descriptor.writeToInode(buf, len);
 }
 
 
