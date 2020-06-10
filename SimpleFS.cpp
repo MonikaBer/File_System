@@ -15,13 +15,17 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
         return -1;
     std::string newFileName = parsedPath.back();
     parsedPath.pop_back();
+    INode targetDirINode;
     try{
-        INode targetDirINode = getTargetDirectory(parsedPath);
+        targetDirINode = getTargetDirectory(parsedPath);
     }catch(...){
         return -1;
     }
-    INode newFile = INode(findFreeInode(), mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
-    targetDirINode.save(newFile);
+    int freeInodeId = findFreeInode();
+    if(freeInodeId < 0)
+        return -1;
+    INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
+    targetDirINode.save(newFileName, newFile);
     // todo locks xdd
     return 0;
 }
@@ -167,8 +171,6 @@ int SimpleFS::findFreeInode() {
     unsigned int id = 0;
     while((line[free_inode_byte]<<id) & 0x80)
         ++id;
-
-    input.close();
     return 8*free_inode_byte+id;
 }
 
@@ -179,24 +181,24 @@ int SimpleFS::findFreeInode() {
  * @param inode - object to save
  * @return
  */
-//int SimpleFS::writeInode(FileDescriptor &fd) {
-//    ConfigLoader* loader = ConfigLoader::getInstance();
-//    std::fstream &ofs = loader->getInodes();
-//    ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
-//    ofs << fd.getInode();
-//
-//    // update bitmap
-//    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-//    std::fstream &inodesBitmap = loader->getInodesBitmap();
-//    inodesBitmap.seekg(fd.getInode()->getId()/8);
-//    char byte;
-//    inodesBitmap.read(&byte, 1);
-//    byte |= 1 << (fd.getInode()->getId()%8);
-//    inodesBitmap.seekp(fd.getInode()->getId()/8);
-//    inodesBitmap.write(&byte, 1);
-//
-//    // TODO return errors ( + doc)
-//}
+int SimpleFS::writeInode(FileDescriptor &fd) {
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    std::fstream &ofs = loader->getInodes();
+    ofs.seekp(fd.getInode()->getId()*loader->getSizeOfInode());
+    ofs << fd.getInode();
+
+    // update bitmap
+    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
+    std::fstream &inodesBitmap = loader->getInodesBitmap();
+    inodesBitmap.seekg(fd.getInode()->getId()/8);
+    char byte;
+    inodesBitmap.read(&byte, 1);
+    byte |= 1 << (fd.getInode()->getId()%8);
+    inodesBitmap.seekp(fd.getInode()->getId()/8);
+    inodesBitmap.write(&byte, 1);
+
+    // TODO return errors ( + doc)
+}
 
 /**
  * Reads INode into inode.

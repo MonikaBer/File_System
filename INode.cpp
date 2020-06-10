@@ -118,18 +118,13 @@ unsigned int INode::getId() const {
     return inode_id;
 }
 
-void INode::save(INode newFileInode) {
+void INode::save(std::string newFileName, INode newFileInode) {
+    addFileToDirectory(newFileName, newFileInode);
     ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & blocksStream = config->getBlocks();
-    seekEnd(blocksStream);
-    blocksStream << std::make_shared<INode>(newFileInode);
-}
-
-void INode::seekEnd(std::fstream &blocksStream) {
-    unsigned lastBlock = length / ConfigLoader::getInstance()->getSizeOfBlock();
-    unsigned positionInLastBlock = length % ConfigLoader::getInstance()->getSizeOfBlock();
-    unsigned lastBlockAddress = blocks[lastBlock];
-    blocksStream.seekg(lastBlock*ConfigLoader::getInstance()->getSizeOfBlock() + positionInLastBlock);
+    std::fstream & inodes = config->getInodes();
+    inodes.seekg(newFileInode.getId()*sizeofInode);
+    inodes << std::make_shared<INode>(newFileInode);
+    std::fstream &inodesBitmap = config->getInodesBitmap();
 }
 
 std::array<char, INode::sizeofInode> INode::serialize() {
@@ -153,4 +148,22 @@ std::array<char, INode::sizeofInode> INode::serialize() {
         INodeBytes[i] = (indirect_block >> (k * 8));
 
     return INodeBytes;
+}
+
+void INode::addFileToDirectory(std::string newFileName, INode inode) {
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    if(newFileName.size() > loader->getMaxLengthOfName())
+        throw std::runtime_error("Bad length of file name");
+    std::fstream& blocks = loader->getBlocks();
+    unsigned positionInBlock = length%loader->getSizeOfBlock();
+    unsigned blockId = length/loader->getSizeOfBlock();
+    char *savedFileName = new char[loader->getMaxLengthOfName()];
+    newFileName.copy(savedFileName, newFileName.size());
+    if(newFileName.size() != loader->getMaxLengthOfName())
+        savedFileName[newFileName.size()] = 0;
+    unsigned inodeId = inode.getId();
+    blocks.seekg(getBlock(blockId)*loader->getSizeOfBlock()+positionInBlock);
+    blocks.write(savedFileName, loader->getMaxLengthOfName());
+    blocks.write((char*)&(inodeId), sizeof(inodeId));
+    delete savedFileName;
 }
