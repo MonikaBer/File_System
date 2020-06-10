@@ -27,10 +27,10 @@ ConfigLoader::ConfigLoader(std::string path)
         map[key] = value;
     }
     createSystemFiles();
-    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary);
-    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary);
-    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary);
-    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary);
+    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary | std::ios::in | std::ios::out);
+    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary | std::ios::in | std::ios::out);
 }
 
 void ConfigLoader::init(std::string path) {
@@ -83,18 +83,26 @@ int ConfigLoader::getMaxLengthOfName() const{
 }
 
 std::fstream & ConfigLoader::getBlocksBitmap() const {
+    hostStreams[FdNames::BLOCKS_BITMAP].seekg(0);
+    hostStreams[FdNames::BLOCKS_BITMAP].seekp(0);
     return hostStreams[FdNames::BLOCKS_BITMAP];
 }
 
 std::fstream & ConfigLoader::getInodesBitmap() const {
+    hostStreams[FdNames::INODES_BITMAP].seekg(0);
+    hostStreams[FdNames::INODES_BITMAP].seekp(0);
     return hostStreams[FdNames::INODES_BITMAP];
 }
 
 std::fstream & ConfigLoader::getInodes() const {
+    hostStreams[FdNames::INODES].seekg(0);
+    hostStreams[FdNames::INODES].seekp(0);
     return hostStreams[FdNames::INODES];
 }
 
 std::fstream & ConfigLoader::getBlocks() const {
+    hostStreams[FdNames::BLOCKS].seekg(0);
+    hostStreams[FdNames::BLOCKS].seekp(0);
     return hostStreams[FdNames::BLOCKS];
 }
 
@@ -171,3 +179,65 @@ int ConfigLoader::createBlocksFile(const std::string &path) const {
     ofs.seekp(getMaxNumberOfBlocks() * sizeOfBlock - 1);
     ofs.write("", 1);
 }
+
+/**
+ * Allows to take ownership of unowned block.
+ *
+ * @return 0 - no free blocks found
+ * @return positive number - block number
+ */
+unsigned ConfigLoader::getFreeBlock() {
+    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+    unsigned block = 0;
+    unsigned char byte;
+    bool looking = true;
+
+    while (looking) {
+        bitmapfs.read((char*)&byte, 1);
+        if (bitmapfs.eof())
+            return 0;
+        if (byte == 255) {    // all blocks taken
+            block += 8;
+            continue;
+        }
+        for (int i = 0; i < 8; i++) {
+            if ( ((byte >> i) & 0x1) == 0) {
+                looking = false;
+                break;
+            }
+            block++;
+        }
+    }
+    byte |= 1 << (block%8);
+    long pos = bitmapfs.tellg();
+    bitmapfs.seekp(pos - 1);
+    bitmapfs.write((char*)&byte, 1);
+    return block;
+}
+
+/**
+ * Allows to renounce ownership of block
+ *
+ * WARNING: data is not erased!
+ *
+ * @param block - block number
+ * @return
+ */
+int ConfigLoader::freeBlock(unsigned int block) {
+    // TODO in any way doesnt check who is the owner of this block! - should it be changed?
+    // TODO should data be cleared?
+    // TODO return values + doc
+    if (block == 0) {   // never free root block!
+        return -1;
+    }
+
+    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+    bitmapfs.seekg(block/8);
+    char byte;
+    bitmapfs.read(&byte, 1);
+    byte &= ~(1 << (block%8));
+    bitmapfs.seekp(block/8);
+    bitmapfs.write(&byte, 1);
+}
+
+// TODO iNode in indirect block expects value 0 to find its end! either add blockscount, clear block after freeing or clear next 4 bytes after assinging new block
