@@ -125,9 +125,9 @@ int SimpleFS::unlink(std::string && name) {
     }
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
     unsigned iNodeToDelete = dirContent[fileToDelete]; // TODO LOCKI
-    std::shared_ptr<INode> inode = readInode(iNodeToDelete);
-    inode->freeAllBlocks();
-    clearInode(inode->getId()); // TODO locks
+    INode inode(iNodeToDelete);
+    inode.freeAllBlocks();
+    clearInode(inode.getId()); // TODO locks
     return -1;
 }
 
