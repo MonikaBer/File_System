@@ -15,8 +15,9 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
         return -1;
     std::string newFileName = parsedPath.back();
     parsedPath.pop_back();
+    INode targetDirINode;
     try{
-        INode targetDirINode = getTargetDirectory(parsedPath);
+        targetDirINode = getTargetDirectory(parsedPath);
     }catch(...){
         return -1;
     }
@@ -218,7 +219,7 @@ int SimpleFS::findFreeInode() {
 //
 //    // T ODO return errors ( + doc)
 //}
-//
+
 //INode SimpleFS::readInode(int inodeNumber) {
 //    ConfigLoader *loader = ConfigLoader::getInstance();
 //    std::fstream &ifs = loader->getInodes();
