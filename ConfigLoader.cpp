@@ -4,6 +4,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "INode.hpp"
+
 std::unique_ptr<ConfigLoader> ConfigLoader::loader;
 std::map<std::string, std::string> ConfigLoader::map;
 std::fstream ConfigLoader::hostStreams[4];
@@ -152,7 +154,7 @@ int ConfigLoader::createInodesFile(const std::string &path) const {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
-    ofs.seekp(getMaxNumberOfInodes()*sizeofInode - 1);
+    ofs.seekp(getMaxNumberOfInodes()* INode::sizeofInode - 1);
     ofs.write("", 1);
 }
 
