@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstring>
 
-#include "SimpleFS.hpp"
 #include "simplefs.h"
 
 void testWrite() {

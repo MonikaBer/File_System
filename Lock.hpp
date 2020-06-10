@@ -15,7 +15,9 @@ private:
 
     void execute();
 public:
+    Lock(Type type, unsigned inodeId);
     Lock(Type type, unsigned inodeId, int fsFileDescriptor, long startPosition, long length);
+    ~Lock();
     void release();
 };
 

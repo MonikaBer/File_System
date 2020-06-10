@@ -1,5 +1,6 @@
 #include "Lock.hpp"
 #include <stdexcept>
+#include "ResourceManager.hpp"
 
 Lock::Lock(Type type, unsigned int inodeId, int fsFileDescriptor, long startPosition, long length):
     type(type),
@@ -17,6 +18,12 @@ Lock::Lock(Type type, unsigned int inodeId, int fsFileDescriptor, long startPosi
     fileLockDescription.l_start = startPosition;
     fileLockDescription.l_len = length;
     execute();
+    std::cout << "Created lock: " + inodeId << std::endl;
+}
+
+Lock::Lock(Lock::Type type, unsigned int inodeId):
+    Lock(type, inodeId, ResourceManager::getInstance()->getInodes(), inodeId*INode::sizeofInode, INode::sizeofInode){
+
 }
 
 //void Lock::acquire() {
@@ -31,4 +38,9 @@ void Lock::release() {
 void Lock::execute() {
     if (fcntl(fileDescriptor, F_SETLKW, &fileLockDescription) == -1) //Blocking lock
         throw std::runtime_error("Fcntl failed.");
+}
+
+Lock::~Lock() {
+    release();
+    std::cout << "Released lock: " + inodeId << std::endl;
 }

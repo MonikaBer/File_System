@@ -10,8 +10,9 @@
 #include <string.h>
 
 
-// TODO nie pozwol stworzyc plikow jesli maja taka sama nazwe
 int SimpleFS::create(std::string && path, unsigned short mode) {
+    //std::stack<Lock> inodeLocks; //TODO: Locally?
+
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;
@@ -21,20 +22,30 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
     try{
         targetDirINode = getTargetDirectory(parsedPath);
     }catch(...){
+        while(!openInodes.empty())
+            openInodes.pop();
         return -1;
     }
     int freeInodeId = findFreeInode();
-    if(freeInodeId < 0)
+    openInodes.emplace(Lock::WR_LOCK, freeInodeId);
+    if(freeInodeId < 0) {
+        while(!openInodes.empty())
+            openInodes.pop();
         return -1;
+    }
 
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    if(dirContent.find(newFileName) != dirContent.end())
+    if(dirContent.find(newFileName) != dirContent.end()) {
+        while(!openInodes.empty())
+            openInodes.pop();
         return -1;
-
+    }
     INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newFileName, newFile);
     newFile.writeInode();
-    // todo locks xdd
+
+    while(!openInodes.empty())
+        openInodes.pop();
     return 0;
 }
 
@@ -194,10 +205,13 @@ int SimpleFS::rmdir(std::string && name) {
 }
 
 INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {
+    openInodes.emplace(Lock::RD_LOCK, 0);
     INode inode = INode(0);
     for(const auto & fileName : path){
         std::map<std::string, unsigned> dir = inode.getDirectoryContent();
-        inode = INode(dir[fileName]);
+        int targetInodeNumber = dir[fileName];
+        openInodes.emplace(Lock::RD_LOCK, targetInodeNumber);
+        inode = INode(targetInodeNumber);
     }
     return inode;
 }
