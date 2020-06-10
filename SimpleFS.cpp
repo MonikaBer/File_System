@@ -34,6 +34,7 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
 
     INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newFileName, newFile);
+    newFile.writeInode();
     // todo locks xdd
     return 0;
 }

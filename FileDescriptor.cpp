@@ -2,5 +2,5 @@
 #include "FileDescriptor.hpp"
 
 void FileDescriptor::writeToInode(char *buffer, int len) {
-    inode->writeToFile(buffer, len, fileCursor);
+    fileCursor += inode->writeToFile(buffer, len, fileCursor);
 }

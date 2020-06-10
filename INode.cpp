@@ -214,25 +214,38 @@ int INode::writeInode() {
     // TODO return errors ( + doc)
 }
 
-void INode::writeToFile(char *buffer, int size, long fileCursor) {
+int INode::writeToFile(char *buffer, int size, long fileCursor) {
     ConfigLoader * config = ConfigLoader::getInstance();
     std::fstream & blocks_stream = config->getBlocks();
     const int sizeOfBlock = config->getSizeOfBlock();
     long positionInBlock = fileCursor%sizeOfBlock;
     int saved = 0;
+
     for(int blockIndex = fileCursor/sizeOfBlock; size > 0; blockIndex++){
         int blockAddress = blocks[blockIndex];
+
+        if (blockAddress == 0) {
+            unsigned freeBlock = config->getFreeBlock();
+            if (freeBlock == 0) throw std::runtime_error("COULDNT FIND FREE BLOCK");
+            blocks[blockIndex] = freeBlock;
+            blockAddress = blocks[blockIndex];
+        }
+
         blocks_stream.seekg(blockAddress*sizeOfBlock+positionInBlock);
         int remainingSizeOfBlock = sizeOfBlock-positionInBlock;
-        if(remainingSizeOfBlock<=size){ //TODO Check equals
+        if (remainingSizeOfBlock<=size){ //TODO Check equals
             blocks_stream.write(buffer + saved, remainingSizeOfBlock);
             saved += remainingSizeOfBlock;
             size -= remainingSizeOfBlock;
         }
         else {
             blocks_stream.write(buffer + saved, size);
+            saved += size;
             size = 0;
         }
         positionInBlock=0;
     }
+    if (fileCursor + saved > length)
+        length = fileCursor + saved;
+    return saved;
 }

@@ -12,7 +12,7 @@ class INode {
 private:
     const static unsigned maxBlocksNo = 12;
 
-    unsigned short mode;        //0 - file, 1 - dir
+    unsigned short mode = 0;        //0 - file, 1 - dir
     long length = 0;
     unsigned number_of_blocks = 0;
     std::array<unsigned, maxBlocksNo> blocks = {0};
@@ -44,7 +44,7 @@ public:
     unsigned getBlock(unsigned index) const { if(index<blocks.size()) return blocks[index]; else return 0; };    // error returns 0 because block 0 is reserved for root
     long getLength() const { return length; };
 
-    void writeToFile(char* buffer, int size, long fileCursor);
+    int writeToFile(char* buffer, int size, long fileCursor);
     void saveINodeInDirectory(std::string newFileName, INode newFileInode);
 
     std::map<std::string, unsigned> getDirectoryContent();
