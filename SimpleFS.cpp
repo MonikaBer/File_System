@@ -169,7 +169,7 @@ int SimpleFS::unlink(std::string && name) {
     INode inode(iNodeToDelete);
     inode.freeAllBlocks();
     clearInode(inode.getId()); // TODO locks
-    return -1;
+    return 0;
 }
 
 
@@ -191,7 +191,7 @@ int SimpleFS::mkdir(std::string && path) {
     INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newDirName, newDir);
 
-    return -1;
+    return 0;
 }
 
 
