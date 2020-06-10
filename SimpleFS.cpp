@@ -76,7 +76,6 @@ int SimpleFS::_open(std::string && path, int mode) {
 
 
 int SimpleFS::_read(int fd, char * buf, int len) {
-    // TODO not tested!
     if ( fd >= fds.size() )
         return -1;
 
@@ -123,34 +122,32 @@ int SimpleFS::_write(int fd, char * buf, int len) {
 
 
 int SimpleFS::_lseek(int fd, int whence, int offset) {
-    // TODO not tested!
     if ( fd >= fds.size() )
-        return 0; // TODO what to return if error? both positive and negative numbers are taken!
+        throw std::runtime_error("File descriptor doesn't exist");
 
     FileDescriptor &fdr = fds[fd];
     std::shared_ptr<INode> inode = fdr.getInode();
 
     if (whence == 0) {
-        if (offset < 0 || offset >= inode->getLength()) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
-        }
+        if (offset < 0 || offset >= inode->getLength())
+            throw std::runtime_error("Wrong offset value");
         fdr.setFileCursor(offset);
     }
     else if (whence == 1) {
         long cursor = fdr.getFileCursor();
         if (offset + cursor < 0 || offset + cursor >= inode->getLength()) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
+            throw std::runtime_error("Cannot move by offset from current position");
         }
         fdr.setFileCursor(offset + cursor);
     }
     else if (whence == 2) {
         if (offset > 0 || offset + inode->getLength() < 0) {
-            return 0; // TODO what to return if error? both positive and negative numbers are taken!
+            throw std::runtime_error("Cannot move by offset from end position");
         }
         // - 1 because length points to byte AFTER last byte of file, which is against lseek description in documentation
         fdr.setFileCursor(inode->getLength() - 1 + offset);
     }
-    else return 0; // TODO what to return if error? both positive and negative numbers are taken!
+    else throw std::runtime_error("Wrong whence value");
     return offset;
 }
 
