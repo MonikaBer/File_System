@@ -10,6 +10,8 @@ SimpleFS::SimpleFS(std::string && configPath) {
     ConfigLoader::init(configPath);
 }
 
+
+// TODO nie pozwol stworzyc plikow jesli maja taka sama nazwe
 int SimpleFS::create(std::string && path, unsigned short mode) {
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
@@ -48,7 +50,8 @@ int SimpleFS::open(std::string && path, int mode) {
         else
             fds.push_back(FileDescriptor(openINode, Lock::RD_LOCK));
 
-    } catch(...){
+    } catch(std::runtime_error& e){
+        std::cout << e.what();
         return -1;
     }
 
@@ -180,11 +183,15 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
     std::vector<std::string> parsed_path;
     std::string path_element;
     for (auto a = path.begin() + 1; a != path.end(); ++a) {
-        if (*a == '/' or a == path.end() - 1) {
+        if (*a == '/') {
             parsed_path.push_back(path_element);
             path_element.clear();
-        } else
-            path_element.push_back(*a);
+            continue;
+        }
+        path_element.push_back(*a);
+        if (a == path.end() - 1 ) {
+            parsed_path.push_back(path_element);
+        }
     }
     return parsed_path;
 }
@@ -210,34 +217,9 @@ int SimpleFS::findFreeInode() {
     input.seekp(free_inode_byte);
     input.write((char*)&byteWithFreeINode, 1);
 
-    input.close();
     return 8*free_inode_byte+id;
 }
 
-/**
- * Saves INode to file and sets bit in bitmap to inform that INode is in use.
- *
- * @param fd - file descriptor holding INode number of file to save
- * @param inode - object to save
- * @return
- */
-int SimpleFS::writeInode(FileDescriptor &fd) {
-    ConfigLoader* loader = ConfigLoader::getInstance();
-    std::fstream &ofs = loader->getInodes();
-    ofs.seekp(fd.getInode()->getId()*INode::sizeofInode);
-    ofs << fd.getInode();
-
-    // update bitmap
-    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-    std::fstream &inodesBitmap = loader->getInodesBitmap();
-    inodesBitmap.seekg(fd.getInode()->getId()/8);
-    char byte;
-    inodesBitmap.read(&byte, 1);
-    byte |= 1 << (fd.getInode()->getId()%8);
-    inodesBitmap.seekp(fd.getInode()->getId()/8);
-    inodesBitmap.write(&byte, 1);
-    // TODO return errors ( + doc)
-}
 
 /**
  * Clears INode by clearing corresponding bit in bitmap. Data is not cleared.

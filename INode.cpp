@@ -5,7 +5,7 @@
 
 
 //methods definitions
-std::fstream& operator>>(std::fstream &inodes, std::shared_ptr<INode> iNode) {
+std::fstream& operator>>(std::fstream &inodes, INode* iNode) {
     inodes.read((char*)&(iNode->mode), sizeof(iNode->mode));
     inodes.read((char*)&(iNode->length), sizeof(iNode->length));
     inodes.read((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
@@ -14,7 +14,7 @@ std::fstream& operator>>(std::fstream &inodes, std::shared_ptr<INode> iNode) {
     return inodes;
 }
 
-std::fstream & operator<<(std::fstream &inodes, const std::shared_ptr<INode> iNode) {
+std::fstream & operator<<(std::fstream &inodes, const INode* iNode) {
     inodes.write((char*)&(iNode->mode), sizeof(iNode->mode));
     inodes.write((char*)&(iNode->length), sizeof(iNode->length));
     inodes.write((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
@@ -34,7 +34,7 @@ INode::INode(unsigned id): inode_id(id) {
     if(inodes.tellg() < inode_position + sizeofInode)
         throw std::runtime_error("inode doesnt exist");
     inodes.seekg(inode_position);
-    inodes >> std::shared_ptr<INode>(this);
+    inodes >> this;
 }
 
 /**
@@ -88,8 +88,8 @@ int INode::freeAllBlocks() {
 }
 
 std::map<std::string, unsigned> INode::getDirectoryContent() {
-    if(!mode)
-        throw std::runtime_error("INode is not a directory");
+//    if(!mode)
+//        throw std::runtime_error("INode is not a directory");
 
     std::map<std::string, unsigned> dir_content;
     std::vector<char> inode_content = getContent();
@@ -129,6 +129,7 @@ std::vector<char> INode::getContent() {
         content.insert(content.end(), block_content, block_content+sizeOfBlock);
         loaded += sizeOfBlock;
     }
+    return content;
 }
 
 unsigned int INode::getId() const {
@@ -178,9 +179,41 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     newFileName.copy(savedFileName, newFileName.size());
     if(newFileName.size() != loader->getMaxLengthOfName())
         savedFileName[newFileName.size()] = 0;
+    for (int i = newFileName.size(); i < loader->getMaxLengthOfName(); i++) {
+        savedFileName[i] = 0;
+    }
     unsigned inodeId = inode.getId();
     blocks.seekg(getBlock(blockId)*loader->getSizeOfBlock()+positionInBlock);
     blocks.write(savedFileName, loader->getMaxLengthOfName());
     blocks.write((char*)&(inodeId), sizeof(inodeId));
     delete savedFileName;
+    length += loader->getMaxLengthOfName() + sizeof(inodeId);
+    std::fstream& inodes = loader->getInodes();
+    writeInode();
+}
+
+
+/**
+ * Saves INode to file and sets bit in bitmap to inform that INode is in use.
+ *
+ * @param fd - file descriptor holding INode number of file to save
+ * @param inode - object to save
+ * @return
+ */
+int INode::writeInode() {
+    ConfigLoader* loader = ConfigLoader::getInstance();
+    std::fstream &ofs = loader->getInodes();
+    ofs.seekp(getId()*INode::sizeofInode);
+    ofs << this;
+
+    // update bitmap
+    // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
+    std::fstream &inodesBitmap = loader->getInodesBitmap();
+    inodesBitmap.seekg(getId()/8);
+    char byte;
+    inodesBitmap.read(&byte, 1);
+    byte |= 1 << (getId()%8);
+    inodesBitmap.seekp(getId()/8);
+    inodesBitmap.write(&byte, 1);
+    // TODO return errors ( + doc)
 }

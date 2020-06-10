@@ -20,7 +20,6 @@ private:
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
 public: //TODO: Change to private
-    int writeInode(FileDescriptor& fd);
     INode readInode(FileDescriptor& fd);
     std::shared_ptr<INode> readInode(int inodeNumber);
     int clearInode(FileDescriptor&fd);

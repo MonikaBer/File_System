@@ -23,8 +23,8 @@ private:
     void addFileToDirectory(std::string newFileName, INode inode);
 
 
-    friend std::fstream& operator>>(std::fstream& is, std::shared_ptr<INode> en);
-    friend std::fstream& operator<<(std::fstream& os, std::shared_ptr<INode> en);
+    friend std::fstream& operator>>(std::fstream& is, INode* en);
+    friend std::fstream& operator<<(std::fstream& os, const INode* en);
 
 public:
     static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
@@ -48,6 +48,7 @@ public:
 
     std::map<std::string, unsigned> getDirectoryContent();
     std::vector<char> getContent();
+    int writeInode();
 };
 
 #endif
