@@ -3,25 +3,31 @@
 #include <cstring>
 
 #include "INode.hpp"
+#include <unistd.h>
 
+void INode::loadInode(INode* en, int inodeId){
+    int inodesFileDescriptor = ConfigLoader::getInstance()->getInodes();
+    unsigned int inode_position = inodeId * sizeofInode;
+    lseek(inodesFileDescriptor, 0, SEEK_END);
+    if(lseek(inodesFileDescriptor, 0, SEEK_CUR) < inode_position + sizeofInode)
+        throw std::runtime_error("inode doesnt exist");
+    lseek(inodesFileDescriptor, inode_position, SEEK_SET);
 
-//methods definitions
-std::fstream& operator>>(std::fstream &inodes, INode* iNode) {
-    inodes.read((char*)&(iNode->mode), sizeof(iNode->mode));
-    inodes.read((char*)&(iNode->length), sizeof(iNode->length));
-    inodes.read((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
-    inodes.read((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    inodes.read((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
-    return inodes;
+    read(inodesFileDescriptor, (char*)&(en->mode), sizeof(en->mode));
+    read(inodesFileDescriptor, (char*)&(en->length), sizeof(en->length));
+    read(inodesFileDescriptor, (char*)&(en->number_of_blocks), sizeof(en->number_of_blocks));
+    read(inodesFileDescriptor, (char*)en->blocks.data(), sizeof(en->blocks));
+    read(inodesFileDescriptor, (char*)&(en->indirect_block), sizeof(en->indirect_block));
 }
 
-std::fstream & operator<<(std::fstream &inodes, const INode* iNode) {
-    inodes.write((char*)&(iNode->mode), sizeof(iNode->mode));
-    inodes.write((char*)&(iNode->length), sizeof(iNode->length));
-    inodes.write((char*)&(iNode->number_of_blocks), sizeof(iNode->number_of_blocks));
-    inodes.write((char*)iNode->blocks.data(), sizeof(iNode->blocks));
-    inodes.write((char*)&(iNode->indirect_block), sizeof(iNode->indirect_block));
-    return inodes;
+void INode::saveInode(const INode* en){
+    int inodesFileDescriptor = ConfigLoader::getInstance()->getInodes();
+    lseek(inodesFileDescriptor, en->getId()*sizeofInode, SEEK_SET);
+    write(inodesFileDescriptor, (char*)&(en->mode), sizeof(en->mode));
+    write(inodesFileDescriptor, (char*)&(en->length), sizeof(en->length));
+    write(inodesFileDescriptor, (char*)&(en->number_of_blocks), sizeof(en->number_of_blocks));
+    write(inodesFileDescriptor, (char*)en->blocks.data(), sizeof(en->blocks));
+    write(inodesFileDescriptor, (char*)&(en->indirect_block), sizeof(en->indirect_block));
 }
 
 INode::INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock)
@@ -29,13 +35,7 @@ INode::INode(unsigned int id, unsigned short mode, long length, unsigned int num
 
 INode::INode(unsigned id): inode_id(id) {
     ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & inodes = config->getInodes();
-    unsigned int inode_position = id * sizeofInode;
-    inodes.seekg(0, std::ios::end);
-    if(inodes.tellg() < inode_position + sizeofInode)
-        throw std::runtime_error("inode doesnt exist");
-    inodes.seekg(inode_position);
-    inodes >> this;
+    loadInode(this, id);
 }
 
 /**
@@ -52,10 +52,10 @@ int INode::addBlock(unsigned int block) {
         if (indirect_block == 0) {
             indirect_block = ConfigLoader::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos
         }
-        std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
+        int blocksFile = ConfigLoader::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 12) * sizeof(unsigned);
-        blocksFile.seekp(host_file_offset);
-        blocksFile.write((char*)&block, sizeof(unsigned));
+        lseek(blocksFile, host_file_offset, SEEK_SET);
+        write(blocksFile, (char*)&block, sizeof(unsigned));
     }
     number_of_blocks++;
     return 0;
@@ -63,18 +63,18 @@ int INode::addBlock(unsigned int block) {
 
 int INode::removeBlock() {
     if(number_of_blocks <= 12) {
-        ConfigLoader::freeBlock(blocks[number_of_blocks - 1]);
+        ConfigLoader::getInstance()->freeBlock(blocks[number_of_blocks - 1]);
         blocks[number_of_blocks - 1] = 0;
     }
     else {
-        std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
+        int blocksFile = ConfigLoader::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 13) * sizeof(unsigned);
-        blocksFile.seekg(host_file_offset);
+        lseek(blocksFile, host_file_offset, SEEK_SET);
         unsigned block;
-        blocksFile.read((char*)&block, sizeof(unsigned ));
-        ConfigLoader::freeBlock(block);
+        read(blocksFile, (char*)&block, sizeof(unsigned));
+        ConfigLoader::getInstance()->freeBlock(block);
         if (number_of_blocks == 13) {
-            ConfigLoader::freeBlock(indirect_block);
+            ConfigLoader::getInstance()->freeBlock(indirect_block);
             indirect_block = 0;     // TODO Artur zwolnij z tego locka czy cos nie znam sie XD
         }
     }
@@ -107,22 +107,22 @@ std::map<std::string, unsigned> INode::getDirectoryContent() {
 
 std::vector<char> INode::getContent() {
     ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & blocks_stream = config->getBlocks();
+    int blocks_stream = config->getBlocks();
     int sizeOfBlock = config->getSizeOfBlock();
     std::vector<char> content;
     unsigned long loaded = 0;
     char block_content[sizeOfBlock];
     //todo: pewnie trzeba tu zrobić blokady
     for(auto & a : blocks){
-        blocks_stream.seekg(a * sizeOfBlock);
+        lseek(blocks_stream, a*sizeOfBlock, SEEK_SET);
         if(length - loaded < sizeOfBlock){
             if(length - loaded) {
-                blocks_stream.read(block_content, length - loaded);
+                read(blocks_stream, block_content, length - loaded);
                 content.insert(content.end(), block_content, block_content+length-loaded);
             }
             break;
         }
-        blocks_stream.read(block_content, sizeOfBlock);
+        read(blocks_stream, block_content, sizeOfBlock);
         content.insert(content.end(), block_content, block_content+sizeOfBlock);
         loaded += sizeOfBlock;
     }
@@ -136,9 +136,7 @@ unsigned int INode::getId() const {
 void INode::saveINodeInDirectory(std::string newFileName, INode newFileInode) {
     addFileToDirectory(newFileName, newFileInode);
     ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & inodes = config->getInodes();
-    inodes.seekg(newFileInode.getId()*sizeofInode);
-    inodes << std::make_shared<INode>(newFileInode);
+    saveInode(&newFileInode);
 }
 
 std::array<char, INode::sizeofInode> INode::serialize() {
@@ -168,7 +166,7 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     ConfigLoader* loader = ConfigLoader::getInstance();
     if(newFileName.size() > loader->getMaxLengthOfName())
         throw std::runtime_error("Bad length of file name");
-    std::fstream& blocks = loader->getBlocks();
+    int blocks = loader->getBlocks();
     unsigned positionInBlock = length%loader->getSizeOfBlock();
     unsigned blockId = length/loader->getSizeOfBlock();
     char *savedFileName = new char[loader->getMaxLengthOfName()];
@@ -179,12 +177,11 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
         savedFileName[i] = 0;
     }
     unsigned inodeId = inode.getId();
-    blocks.seekg(getBlock(blockId)*loader->getSizeOfBlock()+positionInBlock);
-    blocks.write(savedFileName, loader->getMaxLengthOfName());
-    blocks.write((char*)&(inodeId), sizeof(inodeId));
+    lseek(blocks, getBlock(blockId)*loader->getSizeOfBlock()+positionInBlock, SEEK_SET);
+    write(blocks, savedFileName, loader->getMaxLengthOfName());
+    write(blocks, (char*)&(inodeId), sizeof(inodeId));
     delete savedFileName;
     length += loader->getMaxLengthOfName() + sizeof(inodeId);
-    std::fstream& inodes = loader->getInodes();
     writeInode();
 }
 
@@ -198,25 +195,22 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
  */
 int INode::writeInode() {
     ConfigLoader* loader = ConfigLoader::getInstance();
-    std::fstream &ofs = loader->getInodes();
-    ofs.seekp(getId()*INode::sizeofInode);
-    ofs << this;
-
+    saveInode(this);
     // update bitmap
     // TODO maybe split into updateInode (wont change bitmap) and createInode, which will update bitmap
-    std::fstream &inodesBitmap = loader->getInodesBitmap();
-    inodesBitmap.seekg(getId()/8);
+    int inodesBitmap = loader->getInodesBitmap();
+    lseek(inodesBitmap, getId()/8, SEEK_SET);
     char byte;
-    inodesBitmap.read(&byte, 1);
+    read(inodesBitmap, &byte, 1);
     byte |= 1 << (getId()%8);
-    inodesBitmap.seekp(getId()/8);
-    inodesBitmap.write(&byte, 1);
+    lseek(inodesBitmap, getId()/8, SEEK_SET);
+    write(inodesBitmap, &byte, 1);
     // TODO return errors ( + doc)
 }
 
 int INode::writeToFile(char *buffer, int size, long fileCursor) {
     ConfigLoader * config = ConfigLoader::getInstance();
-    std::fstream & blocks_stream = config->getBlocks();
+    int blocks_stream = config->getBlocks();
     const int sizeOfBlock = config->getSizeOfBlock();
     long positionInBlock = fileCursor%sizeOfBlock;
     int saved = 0;
@@ -230,16 +224,15 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
             blocks[blockIndex] = freeBlock;
             blockAddress = blocks[blockIndex];
         }
-
-        blocks_stream.seekg(blockAddress*sizeOfBlock+positionInBlock);
+        lseek(blocks_stream, blockAddress*sizeOfBlock+positionInBlock, SEEK_SET);
         int remainingSizeOfBlock = sizeOfBlock-positionInBlock;
         if (remainingSizeOfBlock<=size){ //TODO Check equals
-            blocks_stream.write(buffer + saved, remainingSizeOfBlock);
+            write(blocks_stream, buffer + saved, remainingSizeOfBlock);
             saved += remainingSizeOfBlock;
             size -= remainingSizeOfBlock;
         }
         else {
-            blocks_stream.write(buffer + saved, size);
+            write(blocks_stream, buffer + saved, size);
             saved += size;
             size = 0;
         }

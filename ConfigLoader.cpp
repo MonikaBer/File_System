@@ -1,18 +1,23 @@
 #include "ConfigLoader.hpp"
-#include <fstream>
 #include <sstream>
 #include <cmath>
-#include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <fstream>
+
 
 #include "INode.hpp"
 
-std::unique_ptr<ConfigLoader> ConfigLoader::loader;
-std::map<std::string, std::string> ConfigLoader::map;
-std::fstream ConfigLoader::hostStreams[4];
-
-ConfigLoader::ConfigLoader(std::string path)
+ConfigLoader::ConfigLoader():
+    initialized(false)
 {
-    std::ifstream input(path);
+
+}
+
+void ConfigLoader::initialize(std::string path){
+    if(initialized)
+        return;
+    std::fstream input(path);
     if(!input.is_open())
         throw std::runtime_error("Couldn't open configuration file.");
     std::string line;
@@ -27,18 +32,21 @@ ConfigLoader::ConfigLoader(std::string path)
         map[key] = value;
     }
     createSystemFiles();
-    hostStreams[FdNames::BLOCKS_BITMAP].open(getBlocksBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
-    hostStreams[FdNames::INODES_BITMAP].open(getInodesBitmapPath(), std::ios::binary | std::ios::in | std::ios::out);
-    hostStreams[FdNames::INODES].open(getInodesPath(), std::ios::binary | std::ios::in | std::ios::out);
-    hostStreams[FdNames::BLOCKS].open(getBlocksPath(), std::ios::binary | std::ios::in | std::ios::out);
+    openFile(BLOCKS_BITMAP, getBlocksBitmapPath());
+    openFile(INODES_BITMAP, getInodesBitmapPath());
+    openFile(BLOCKS, getBlocksPath());
+    openFile(INODES, getInodesPath());
+    initialized = true;
 }
 
-void ConfigLoader::init(std::string path) {
-    loader = std::make_unique<ConfigLoader>(path);
+void ConfigLoader::openFile(FdNames type, std::string path){
+    hostFd[type] = open(path.data(), O_RDWR);
 }
 
 ConfigLoader* ConfigLoader::getInstance(){
-    return loader.get();
+    static ConfigLoader loader;
+    loader.initialize("../etc/simplefs.conf");
+    return &loader;
 }
 
 void ConfigLoader::strip(std::string& string, const std::string& characters_to_avoid){
@@ -71,39 +79,39 @@ std::string ConfigLoader::getBlocksPath(){
 }
 
 int ConfigLoader::getMaxNumberOfBlocks() const {
-    return std::stoi(map["max number of blocks"]);
+    return std::stoi(map.at("max number of blocks"));
 }
 
 int ConfigLoader::getMaxNumberOfInodes() const{
-    return std::stoi(map["max number of inodes"]);
+    return std::stoi(map.at("max number of inodes"));
 }
 
 int ConfigLoader::getMaxLengthOfName() const{
-    return std::stoi(map["max length of name"]);
+    return std::stoi(map.at("max length of name"));
 }
 
-std::fstream & ConfigLoader::getBlocksBitmap() const {
-    hostStreams[FdNames::BLOCKS_BITMAP].seekg(0);
-    hostStreams[FdNames::BLOCKS_BITMAP].seekp(0);
-    return hostStreams[FdNames::BLOCKS_BITMAP];
+int ConfigLoader::getBlocksBitmap() const {
+    int fd = hostFd[BLOCKS_BITMAP];
+    lseek(fd, 0, 0);
+    return fd;
 }
 
-std::fstream & ConfigLoader::getInodesBitmap() const {
-    hostStreams[FdNames::INODES_BITMAP].seekg(0);
-    hostStreams[FdNames::INODES_BITMAP].seekp(0);
-    return hostStreams[FdNames::INODES_BITMAP];
+int ConfigLoader::getInodesBitmap() const {
+    int fd = hostFd[INODES_BITMAP];
+    lseek(fd, 0, 0);
+    return fd;
 }
 
-std::fstream & ConfigLoader::getInodes() const {
-    hostStreams[FdNames::INODES].seekg(0);
-    hostStreams[FdNames::INODES].seekp(0);
-    return hostStreams[FdNames::INODES];
+int ConfigLoader::getInodes() const {
+    int fd = hostFd[INODES];
+    lseek(fd, 0, 0);
+    return fd;
 }
 
-std::fstream & ConfigLoader::getBlocks() const {
-    hostStreams[FdNames::BLOCKS].seekg(0);
-    hostStreams[FdNames::BLOCKS].seekp(0);
-    return hostStreams[FdNames::BLOCKS];
+int ConfigLoader::getBlocks() const {
+    int fd = hostFd[BLOCKS];
+    lseek(fd, 0, 0);
+    return fd;
 }
 
 int ConfigLoader::getSizeOfBlock() const {
@@ -187,14 +195,13 @@ int ConfigLoader::createBlocksFile(const std::string &path) const {
  * @return positive number - block number
  */
 unsigned ConfigLoader::getFreeBlock() {
-    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+    int bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
     unsigned block = 0;
     unsigned char byte;
     bool looking = true;
-
     while (looking) {
-        bitmapfs.read((char*)&byte, 1);
-        if (bitmapfs.eof())
+        read(bitmapfs, (char*)&byte, 1);
+        if(byte == EOF)
             return 0;
         if (byte == 255) {    // all blocks taken
             block += 8;
@@ -209,9 +216,8 @@ unsigned ConfigLoader::getFreeBlock() {
         }
     }
     byte |= 1 << (block%8);
-    long pos = bitmapfs.tellg();
-    bitmapfs.seekp(pos - 1);
-    bitmapfs.write((char*)&byte, 1);
+    lseek(bitmapfs, -1, SEEK_CUR);
+    write(bitmapfs, (char*)&byte, 1);
     return block;
 }
 
@@ -231,13 +237,13 @@ int ConfigLoader::freeBlock(unsigned int block) {
         return -1;
     }
 
-    std::fstream& bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
-    bitmapfs.seekg(block/8);
+    int bitmapfs = ConfigLoader::getInstance()->getBlocksBitmap();
+    lseek(bitmapfs, block/8, SEEK_SET);
     char byte;
-    bitmapfs.read(&byte, 1);
+    read(bitmapfs, &byte, 1);
     byte &= ~(1 << (block%8));
-    bitmapfs.seekp(block/8);
-    bitmapfs.write(&byte, 1);
+    lseek(bitmapfs, block/8, SEEK_SET);
+    write(bitmapfs, &byte, 1);
 }
 
 // TODO iNode in indirect block expects value 0 to find its end! either add blockscount, clear block after freeing or clear next 4 bytes after assinging new block

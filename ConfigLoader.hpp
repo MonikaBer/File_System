@@ -8,13 +8,13 @@
 #include "INode.hpp"
 
 class ConfigLoader {
-    static std::unique_ptr<ConfigLoader> loader;
 
-    static std::map<std::string, std::string> map;
+    std::map<std::string, std::string> map;
 
     enum FdNames {BLOCKS_BITMAP=0, INODES_BITMAP=1, INODES=2, BLOCKS=3};
-    static std::fstream hostStreams[4];
-    static int hostFd[4];
+    int hostFd[4];
+
+    bool initialized;
 
     static const int sizeOfBlock = 4096;
 
@@ -33,22 +33,25 @@ private:
     std::string getInodesBitmapPath();
     std::string getInodesPath();
     std::string getBlocksPath();
+
+    void initialize(std::string path);
 public:
-    static void init(std::string path);
     static ConfigLoader* getInstance();
 
-    explicit ConfigLoader(std::string path);
-    std::fstream & getBlocksBitmap() const;
-    std::fstream & getInodesBitmap() const;
-    std::fstream & getInodes() const;
-    std::fstream & getBlocks() const;
+    ConfigLoader();
+    int getBlocksBitmap() const;
+    int getInodesBitmap() const;
+    int getInodes() const;
+    int getBlocks() const;
     int getMaxNumberOfBlocks() const;
     int getMaxNumberOfInodes() const;
     int getMaxLengthOfName() const;
     int getSizeOfBlock() const;
 
     unsigned getFreeBlock();
-    static int freeBlock(unsigned block);
+    int freeBlock(unsigned block);
+
+    void openFile(FdNames type, std::string path);
 };
 
 #endif

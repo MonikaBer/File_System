@@ -22,9 +22,8 @@ private:
 
     void addFileToDirectory(std::string newFileName, INode inode);
 
-
-    friend std::fstream& operator>>(std::fstream& is, INode* en);
-    friend std::fstream& operator<<(std::fstream& os, const INode* en);
+    void loadInode(INode* en, int nodeId);
+    void saveInode(const INode* en);
 
 public:
     static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);

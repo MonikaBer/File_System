@@ -5,10 +5,9 @@
 #include "ConfigLoader.hpp"
 #include <functional>
 #include "Lock.hpp"
-
-SimpleFS::SimpleFS(std::string && configPath) {
-    ConfigLoader::init(configPath);
-}
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 
 // TODO nie pozwol stworzyc plikow jesli maja taka sama nazwe
@@ -75,7 +74,7 @@ int SimpleFS::read(int fd, char * buf, int len) {
     std::shared_ptr<INode> inode = fdr.getInode();
     unsigned totalRead = 0;
 
-    std::fstream& blocksFile = ConfigLoader::getInstance()->getBlocks();
+    int blocksFile = ConfigLoader::getInstance()->getBlocks();
 
     // if trying to read more than left in file, cut len so it stops on end of file
     if (len + cursor > inode->getLength())
@@ -94,8 +93,8 @@ int SimpleFS::read(int fd, char * buf, int len) {
         if (blockOffset + len > blockSize)
             singleRead = blockSize - blockOffset;
 
-        blocksFile.seekg(host_file_offset);
-        blocksFile.read(buf+totalRead, singleRead);
+        lseek(blocksFile, host_file_offset, SEEK_SET);
+        read(blocksFile, buf+totalRead, singleRead);
 
         totalRead += singleRead;
         cursor += singleRead;
@@ -223,26 +222,28 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
 }
 
 int SimpleFS::findFreeInode() {
-    std::fstream &input = ConfigLoader::getInstance()->getInodesBitmap();
-    if(!input.is_open())
-        throw std::runtime_error("Couldn't open inodes bitmap file.");
-
-    std::string line( (std::istreambuf_iterator<char>(input)),(std::istreambuf_iterator<char>()));
-    if(line.empty())
+    int input = ConfigLoader::getInstance()->getInodesBitmap();
+    size_t sizeOfLine = 0;
+    char * line = NULL;
+    FILE *stream = fdopen(input, "bw+");
+    getline(&line, &sizeOfLine, stream);
+    if(getline(&line, &sizeOfLine, stream) == -1)
         return -1;
-
-    std::size_t free_inode_byte = line.find_first_not_of(0xFF);
+    std::size_t free_inode_byte = 0;
+    while(free_inode_byte < sizeOfLine){
+        if(line[free_inode_byte] != 0xFF)
+            break;
+        free_inode_byte++;
+    }
     if(free_inode_byte == std::string::npos)
         return -1;
-
     char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
     while((byteWithFreeINode>>id) & 0x1)
         ++id;
     byteWithFreeINode |= 1<<id;
-    input.seekp(free_inode_byte);
-    input.write((char*)&byteWithFreeINode, 1);
-
+    lseek(input, free_inode_byte, SEEK_SET);
+    write(input, (char*)&byteWithFreeINode, 1);
     return 8*free_inode_byte+id;
 }
 
@@ -254,25 +255,25 @@ int SimpleFS::findFreeInode() {
  * @return 
  */
 int SimpleFS::clearInode(FileDescriptor &fd) {
-    std::fstream& bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
-    bitmapfs.seekg(fd.getInode()->getId()/8);
+    int bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
+    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
     char byte;
-    bitmapfs.read(&byte, 1);
+    read(bitmapfs, &byte, 1);
     byte &= ~(1 << (fd.getInode()->getId()%8));
-    bitmapfs.seekp(fd.getInode()->getId()/8);
-    bitmapfs.write(&byte, 1);
+    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
+    write(bitmapfs, &byte, 1);
     
     // TODO return errors ( + doc)
 }
 
 int SimpleFS::clearInode(unsigned inode) {
-    std::fstream& bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
-    bitmapfs.seekg(inode/8);
+    int bitmapfs = ConfigLoader::getInstance()->getInodesBitmap();
+    lseek(bitmapfs, inode/8, SEEK_SET);
     char byte;
-    bitmapfs.read(&byte, 1);
+    read(bitmapfs, &byte, 1);
     byte &= ~(1 << (inode%8));
-    bitmapfs.seekp(inode/8);
-    bitmapfs.write(&byte, 1);
+    lseek(bitmapfs, inode/8, SEEK_SET);
+    write(bitmapfs, &byte, 1);
 
     // TODO return errors ( + doc)
 }
