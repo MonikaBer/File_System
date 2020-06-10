@@ -1,22 +1,17 @@
 #include "ConfigLoader.hpp"
+#include <map>
 #include <sstream>
 #include <cmath>
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
 
-
 #include "INode.hpp"
 
-ConfigLoader::ConfigLoader():
-    initialized(false)
+ConfigLoader ConfigLoader::loader("../etc/simplefs.conf");
+
+ConfigLoader::ConfigLoader(std::string path)
 {
-
-}
-
-void ConfigLoader::initialize(std::string path){
-    if(initialized)
-        return;
     std::fstream input(path);
     if(!input.is_open())
         throw std::runtime_error("Couldn't open configuration file.");
@@ -36,7 +31,6 @@ void ConfigLoader::initialize(std::string path){
     openFile(INODES_BITMAP, getInodesBitmapPath());
     openFile(BLOCKS, getBlocksPath());
     openFile(INODES, getInodesPath());
-    initialized = true;
 }
 
 void ConfigLoader::openFile(FdNames type, std::string path){
@@ -44,8 +38,6 @@ void ConfigLoader::openFile(FdNames type, std::string path){
 }
 
 ConfigLoader* ConfigLoader::getInstance(){
-    static ConfigLoader loader;
-    loader.initialize("../etc/simplefs.conf");
     return &loader;
 }
 
@@ -71,50 +63,50 @@ std::string ConfigLoader::getInodesBitmapPath(){
 }
 
 std::string ConfigLoader::getInodesPath(){
-    return map["inodes path"];
+    return map.at("inodes path");
 }
 
 std::string ConfigLoader::getBlocksPath(){
     return map["blocks path"];
 }
 
-int ConfigLoader::getMaxNumberOfBlocks() const {
-    return std::stoi(map.at("max number of blocks"));
+int ConfigLoader::getMaxNumberOfBlocks() {
+    return std::stoi(map["max number of blocks"]);
 }
 
-int ConfigLoader::getMaxNumberOfInodes() const{
-    return std::stoi(map.at("max number of inodes"));
+int ConfigLoader::getMaxNumberOfInodes() {
+    return std::stoi(map["max number of inodes"]);
 }
 
-int ConfigLoader::getMaxLengthOfName() const{
-    return std::stoi(map.at("max length of name"));
+int ConfigLoader::getMaxLengthOfName() {
+    return std::stoi(map["max length of name"]);
 }
 
-int ConfigLoader::getBlocksBitmap() const {
+int ConfigLoader::getBlocksBitmap() {
     int fd = hostFd[BLOCKS_BITMAP];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getInodesBitmap() const {
+int ConfigLoader::getInodesBitmap() {
     int fd = hostFd[INODES_BITMAP];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getInodes() const {
+int ConfigLoader::getInodes() {
     int fd = hostFd[INODES];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getBlocks() const {
+int ConfigLoader::getBlocks() {
     int fd = hostFd[BLOCKS];
     lseek(fd, 0, 0);
     return fd;
 }
 
-int ConfigLoader::getSizeOfBlock() const {
+int ConfigLoader::getSizeOfBlock() {
     return sizeOfBlock;
 }
 
@@ -166,7 +158,7 @@ int ConfigLoader::createBitmapFile(const std::string &path, int numberOfBits) {
  * @param path - path where file will be created
  * @return
  */
-int ConfigLoader::createInodesFile(const std::string &path) const {
+int ConfigLoader::createInodesFile(const std::string &path) {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);
@@ -180,7 +172,7 @@ int ConfigLoader::createInodesFile(const std::string &path) const {
  * @param path - path where file will be created
  * @return
  */
-int ConfigLoader::createBlocksFile(const std::string &path) const {
+int ConfigLoader::createBlocksFile(const std::string &path) {
     std::ofstream ofs(path, std::ios::binary);
     if(!ofs.is_open())
         throw std::runtime_error("Cannot open file of path " + path);

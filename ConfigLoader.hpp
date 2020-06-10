@@ -8,13 +8,12 @@
 #include "INode.hpp"
 
 class ConfigLoader {
+    static ConfigLoader loader;
 
     std::map<std::string, std::string> map;
 
     enum FdNames {BLOCKS_BITMAP=0, INODES_BITMAP=1, INODES=2, BLOCKS=3};
     int hostFd[4];
-
-    bool initialized;
 
     static const int sizeOfBlock = 4096;
 
@@ -25,28 +24,26 @@ private:
 
     int createSystemFiles();
     int createBitmapFile(const std::string& path, int numberOfBits);
-    int createInodesFile(const std::string& path) const;
-    int createBlocksFile(const std::string& path) const;
+    int createInodesFile(const std::string& path);
+    int createBlocksFile(const std::string& path);
     inline bool fileExists (const std::string& name);
 
     std::string getBlocksBitmapPath();
     std::string getInodesBitmapPath();
     std::string getInodesPath();
     std::string getBlocksPath();
-
-    void initialize(std::string path);
 public:
     static ConfigLoader* getInstance();
 
-    ConfigLoader();
-    int getBlocksBitmap() const;
-    int getInodesBitmap() const;
-    int getInodes() const;
-    int getBlocks() const;
-    int getMaxNumberOfBlocks() const;
-    int getMaxNumberOfInodes() const;
-    int getMaxLengthOfName() const;
-    int getSizeOfBlock() const;
+    explicit ConfigLoader(std::string path);
+    int getBlocksBitmap();
+    int getInodesBitmap();
+    int getInodes();
+    int getBlocks();
+    int getMaxNumberOfBlocks();
+    int getMaxNumberOfInodes();
+    int getMaxLengthOfName();
+    int getSizeOfBlock();
 
     unsigned getFreeBlock();
     int freeBlock(unsigned block);

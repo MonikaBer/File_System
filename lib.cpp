@@ -3,7 +3,7 @@
 
 static SimpleFS simpleFS = SimpleFS();
 
-extern "C" {
+//extern "C" {
     int create(char * name, int mode) {
         return simpleFS.create(name, mode);
     }
@@ -17,7 +17,7 @@ extern "C" {
     }
 
     int write(int fd, char * buf, int len) {
-        return simpleFS.write(fd, buf, len);
+        return simpleFS._write(fd, buf, len);
     }
 
     int lseek(int fd, int whence, int offset) {
@@ -35,4 +35,4 @@ extern "C" {
     int rmdir(char * name) {
         return simpleFS.rmdir(name);
     }
-}
+//}

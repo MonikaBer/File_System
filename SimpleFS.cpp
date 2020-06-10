@@ -105,7 +105,7 @@ int SimpleFS::read(int fd, char * buf, int len) {
 }
 
 
-int SimpleFS::write(int fd, char * buf, int len) {
+int SimpleFS::_write(int fd, char * buf, int len) {
     FileDescriptor descriptor = fds[fd];
     descriptor.writeToInode(buf, len);
 }
@@ -225,8 +225,7 @@ int SimpleFS::findFreeInode() {
     int input = ConfigLoader::getInstance()->getInodesBitmap();
     size_t sizeOfLine = 0;
     char * line = NULL;
-    FILE *stream = fdopen(input, "bw+");
-    getline(&line, &sizeOfLine, stream);
+    FILE *stream = fdopen(input, "wb+");
     if(getline(&line, &sizeOfLine, stream) == -1)
         return -1;
     std::size_t free_inode_byte = 0;

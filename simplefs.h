@@ -1,7 +1,7 @@
 #ifndef SIMPLEFS_H
 #define SIMPLEFS_H
 
-extern "C" {
+//extern "C" {
     int create(char *name, int mode);
     int open(char *name, int mode);
     int read(int fd, char *buf, int len);
@@ -10,6 +10,6 @@ extern "C" {
     int unlink(char *name);
     int mkdir(char *name);
     int rmdir(char *name);
-}
+//}
 
 #endif

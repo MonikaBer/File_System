@@ -34,7 +34,7 @@ public:
     int create(std::string && path, unsigned short mode);
     int open(std::string && name, int mode);
     int read(int fd, char * buf, int len);
-    int write(int fd, char * buf, int len);
+    int _write(int fd, char * buf, int len);
     int lseek(int fd, int whence, int offset);
     int unlink(std::string && name);
     int mkdir(std::string && name);
