@@ -19,16 +19,8 @@ private:
 
     std::vector<std::string> parseDirect(const std::string& path);
     int findFreeInode();
-public: //TODO: Change to private
-    INode readInode(FileDescriptor& fd);
-    std::shared_ptr<INode> readInode(int inodeNumber);
-    int clearInode(FileDescriptor&fd);
     int clearInode(unsigned inode);
     INode getTargetDirectory(const std::vector<std::string> &path);
-
-    const std::vector<FileDescriptor> &getFds() const {
-        return fds;
-    }
 
 public:
     explicit SimpleFS(std::string path);

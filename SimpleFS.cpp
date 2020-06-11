@@ -270,11 +270,11 @@ int SimpleFS::findFreeInode() {
         return -1;
     std::size_t free_inode_byte = 0;
     while(free_inode_byte < sizeOfLine){
-        if(line[free_inode_byte] != 0xFF)
+        if((unsigned char)line[free_inode_byte] != 0xFF)
             break;
         free_inode_byte++;
     }
-    if(free_inode_byte == std::string::npos)
+    if((unsigned char)line[free_inode_byte] == 0xFF)
         return -1;
     char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
@@ -293,18 +293,6 @@ int SimpleFS::findFreeInode() {
  * @param fd - file descriptor holding INode number of file to delete
  * @return 
  */
-int SimpleFS::clearInode(FileDescriptor &fd) {
-    int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
-    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
-    char byte;
-    read(bitmapfs, &byte, 1);
-    byte &= ~(1 << (fd.getInode()->getId()%8));
-    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
-    write(bitmapfs, &byte, 1);
-    
-    // TODO return errors ( + doc)
-}
-
 int SimpleFS::clearInode(unsigned inode) {
     int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
     lseek(bitmapfs, inode/8, SEEK_SET);
