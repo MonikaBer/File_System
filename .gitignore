@@ -43,4 +43,4 @@ cmake-build-debug
 *.swp
 
 # whole filesystem is not copied to git
-etc/config/*
+etc/config/[^.]*
