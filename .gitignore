@@ -44,3 +44,4 @@ cmake-build-debug
 
 # whole filesystem is not copied to git
 etc/config/[^.]*
+tests/etc_test/config/[^.]*
