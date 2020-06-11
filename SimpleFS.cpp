@@ -238,7 +238,7 @@ INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {
     INode inode = INode(0);
     for(const auto & fileName : path){
         std::map<std::string, unsigned> dir = inode.getDirectoryContent();
-        int targetInodeNumber = dir[fileName];
+        int targetInodeNumber = dir.at(fileName);
         openInodes.emplace(Lock::RD_LOCK, targetInodeNumber);
         inode = INode(targetInodeNumber);
     }
