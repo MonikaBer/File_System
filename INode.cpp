@@ -257,4 +257,9 @@ unsigned INode::getBlock(unsigned index) const {
     if(index >= number_of_blocks)
         throw std::runtime_error("Block of that index uninitialized");
     return blocks[index];
-};
+}
+
+
+unsigned short INode::getMode() {
+    return this->mode;
+}
