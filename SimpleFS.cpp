@@ -61,7 +61,7 @@ int SimpleFS::_open(std::string && path, int mode) {
     try{
         INode targetDirINode = getTargetDirectory(parsedPath);
         std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-        std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent[fileName]);
+        std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent.at(fileName));
 
         if (mode == 1)
             fds.emplace_back(openINode, Lock::WR_LOCK);
@@ -71,7 +71,10 @@ int SimpleFS::_open(std::string && path, int mode) {
     } catch(std::runtime_error& e){
         std::cout << e.what();
         return -1;
+    } catch(std::out_of_range& e){
+        return -1;
     }
+
 
     return fds.size()-1;
 }
