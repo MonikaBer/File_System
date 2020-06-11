@@ -8,7 +8,7 @@
 
 #include "INode.hpp"
 
-ResourceManager ResourceManager::loader("../etc/simplefs.conf");
+std::unique_ptr<ResourceManager> ResourceManager::loader;
 
 ResourceManager::ResourceManager(std::string path)
 {
@@ -29,8 +29,12 @@ ResourceManager::ResourceManager(std::string path)
     processSystemFiles();
 }
 
+void ResourceManager::initialize(std::string path){
+    loader = std::make_unique<ResourceManager>(path);
+}
+
 ResourceManager* ResourceManager::getInstance(){
-    return &loader;
+    return loader.get();
 }
 
 void ResourceManager::strip(std::string& string, const std::string& characters_to_avoid){

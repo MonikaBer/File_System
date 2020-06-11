@@ -9,10 +9,12 @@
 #include <stdio.h>
 #include <string.h>
 
+SimpleFS::SimpleFS(std::string path) {
+    ResourceManager::initialize(path);
+}
 
 int SimpleFS::create(std::string && path, unsigned short mode) {
     //std::stack<Lock> inodeLocks; //TODO: Locally?
-
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;

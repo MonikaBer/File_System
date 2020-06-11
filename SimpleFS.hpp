@@ -31,6 +31,7 @@ public: //TODO: Change to private
     }
 
 public:
+    explicit SimpleFS(std::string path);
     int create(std::string && path, unsigned short mode);
     int _open(std::string && name, int mode);
     int _read(int fd, char * buf, int len);

@@ -8,7 +8,7 @@
 #include "INode.hpp"
 
 class ResourceManager {
-    static ResourceManager loader;
+    static std::unique_ptr<ResourceManager> loader;
 
     std::map<std::string, std::string> map;
 
@@ -32,6 +32,7 @@ private:
     std::string getBlocksPath();
 public:
     static ResourceManager* getInstance();
+    static void initialize(std::string path);
 
     explicit ResourceManager(std::string path);
     int getBlocksBitmap();
