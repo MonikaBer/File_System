@@ -261,7 +261,7 @@ std::vector<std::string> SimpleFS::parseDirect(const std::string& path) {
 
 int SimpleFS::findFreeInode() {
     int input = ResourceManager::getInstance()->getInodesBitmap();
-    size_t sizeOfLine = 0;
+    std::size_t sizeOfLine = 0;
     char * line = NULL;
     FILE *stream = fdopen(input, "wb+");
     if(getline(&line, &sizeOfLine, stream) == -1)
@@ -272,7 +272,7 @@ int SimpleFS::findFreeInode() {
             break;
         free_inode_byte++;
     }
-    if(free_inode_byte == std::string::npos)
+    if(free_inode_byte == 0xFF)
         return -1;
     char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
