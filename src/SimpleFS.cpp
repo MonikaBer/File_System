@@ -9,10 +9,12 @@
 #include <stdio.h>
 #include <string.h>
 
+SimpleFS::SimpleFS(std::string path) {
+    ResourceManager::initialize(path);
+}
 
 int SimpleFS::create(std::string && path, unsigned short mode) {
     //std::stack<Lock> inodeLocks; //TODO: Locally?
-
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;
@@ -60,6 +62,7 @@ int SimpleFS::_open(std::string && path, int mode) {
         INode targetDirINode = getTargetDirectory(parsedPath);
         std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
         std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent.at(fileName));
+
         if (mode == 1)
             fds.emplace_back(openINode, Lock::WR_LOCK);
         else
@@ -71,6 +74,7 @@ int SimpleFS::_open(std::string && path, int mode) {
     } catch(std::out_of_range& e){
         return -1;
     }
+
 
     return fds.size()-1;
 }
@@ -269,11 +273,15 @@ int SimpleFS::findFreeInode() {
         return -1;
     std::size_t free_inode_byte = 0;
     while(free_inode_byte < sizeOfLine){
-        if(line[free_inode_byte] != 0xFF)
+        if((unsigned char)line[free_inode_byte] != 0xFF)
             break;
         free_inode_byte++;
     }
+<<<<<<< HEAD:src/SimpleFS.cpp
     if(free_inode_byte == 0xFF)
+=======
+    if((unsigned char)line[free_inode_byte] == 0xFF)
+>>>>>>> configLoader:SimpleFS.cpp
         return -1;
     char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
@@ -292,18 +300,6 @@ int SimpleFS::findFreeInode() {
  * @param fd - file descriptor holding INode number of file to delete
  * @return 
  */
-int SimpleFS::clearInode(FileDescriptor &fd) {
-    int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
-    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
-    char byte;
-    read(bitmapfs, &byte, 1);
-    byte &= ~(1 << (fd.getInode()->getId()%8));
-    lseek(bitmapfs, fd.getInode()->getId()/8, SEEK_SET);
-    write(bitmapfs, &byte, 1);
-    
-    // TODO return errors ( + doc)
-}
-
 int SimpleFS::clearInode(unsigned inode) {
     int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
     lseek(bitmapfs, inode/8, SEEK_SET);
