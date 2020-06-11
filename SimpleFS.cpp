@@ -158,11 +158,11 @@ int SimpleFS::unlink(std::string && name) {
         return -1;
     }
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    unsigned iNodeToDelete = dirContent[fileToDelete]; // TODO LOCKI
-    INode inode(iNodeToDelete);
-    inode.freeAllBlocks();
-    clearInode(inode.getId()); // TODO locks
-    return -1;
+    unsigned iNodeToDeleteId = dirContent[fileToDelete]; // TODO LOCKI
+    INode inodeToDelete(iNodeToDeleteId);
+    inodeToDelete.freeAllBlocks();
+    clearInode(inodeToDelete.getId()); // TODO locks
+    return 0;
 }
 
 
@@ -184,14 +184,41 @@ int SimpleFS::mkdir(std::string && path) {
     INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newDirName, newDir);
 
-    return -1;
+    return 0;
 }
 
 
-int SimpleFS::rmdir(std::string && name) {
+int SimpleFS::rmdir(std::string && path) {
+    std::vector<std::string> parsedPath = parseDirect(path);
+    INode targetDirINode;
+    if(parsedPath.empty())
+        return -1;
 
+    std::string dirToDelete = parsedPath.back();
+    parsedPath.pop_back();
+    try {
+        targetDirINode = getTargetDirectory(parsedPath);
+    } catch(...) {
+        return -1;
+    }
 
-    return -1;
+    std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
+    unsigned dirToDeleteId = dirContent[dirToDelete]; // TODO LOCKI
+    INode dirToDeleteINode(dirToDeleteId);
+
+    if (dirToDeleteINode.getMode() == 0)  //it's file, not directory
+        return -2;
+
+    //check if dirToDelete is empty
+    std::map<std::string, unsigned> dirToDeleteContent = dirToDeleteINode.getDirectoryContent();
+    if (!dirToDeleteContent.empty())
+        return -3;
+
+    //dirToDelete is empty, so delete it
+    dirToDeleteINode.freeAllBlocks();                //clear data blocks
+    clearInode(dirToDeleteINode.getId());            //clear inode in bitmap     // TODO locks
+
+    return 0;
 }
 
 INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {

@@ -249,3 +249,7 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
         length = fileCursor + saved;
     return saved;
 }
+
+unsigned short INode::getMode() {
+    return this->mode;
+}

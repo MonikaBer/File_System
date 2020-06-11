@@ -50,6 +50,7 @@ public:
     std::map<std::string, unsigned> getDirectoryContent();
     std::vector<char> getContent();
     int writeInode();
+    unsigned short getMode();
 };
 
 #endif
