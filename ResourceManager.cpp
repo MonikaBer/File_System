@@ -26,11 +26,11 @@ ResourceManager::ResourceManager(std::string path)
         strip(value);
         map[key] = value;
     }
-    processSystemFiles();
 }
 
 void ResourceManager::initialize(std::string path){
     loader = std::make_unique<ResourceManager>(path);
+    loader->processSystemFiles();
 }
 
 ResourceManager* ResourceManager::getInstance(){
