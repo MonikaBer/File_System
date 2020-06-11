@@ -170,7 +170,12 @@ int SimpleFS::unlink(std::string && name) {
         return -1;
     }
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    unsigned iNodeToDeleteId = dirContent[fileToDelete]; // TODO LOCKI
+    unsigned iNodeToDeleteId;
+    try {
+        iNodeToDeleteId = dirContent.at(fileToDelete); // TODO LOCKI
+    }catch(...){
+        return -1;
+    }
     INode inodeToDelete(iNodeToDeleteId);
     inodeToDelete.freeAllBlocks();
     clearInode(inodeToDelete.getId()); // TODO locks
