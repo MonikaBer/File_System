@@ -18,7 +18,7 @@ Lock::Lock(Type type, unsigned int inodeId, int fsFileDescriptor, long startPosi
     fileLockDescription.l_start = startPosition;
     fileLockDescription.l_len = length;
     execute();
-    std::cout << "Created lock of: " << inodeId << std::endl;
+//    std::cout << "Created lock of: " << inodeId << std::endl;
 }
 
 Lock::Lock(Lock::Type type, unsigned int inodeId):
@@ -42,5 +42,5 @@ void Lock::execute() {
 
 Lock::~Lock() {
     release();
-    std::cout << "Released lock of: " << inodeId << std::endl;
+//    std::cout << "Released lock of: " << inodeId << std::endl;
 }

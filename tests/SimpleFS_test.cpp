@@ -88,11 +88,6 @@ BOOST_AUTO_TEST_SUITE(SimpleFS_test)
         BOOST_CHECK_EQUAL(fs.unlink("/not_a_file"), -1);
     }
 
-    BOOST_AUTO_TEST_CASE(Unlink){
-        fs.unlink("/new_file");
-        BOOST_CHECK_EQUAL(fs.create("/new_link", 0), 0);
-    }
-
     BOOST_AUTO_TEST_CASE(RmdirRegularFile){
         fs.create("/regular", 0);
         BOOST_CHECK_EQUAL(fs.rmdir("/regular"), -2);
