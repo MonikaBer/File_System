@@ -122,8 +122,8 @@ int ResourceManager::processSystemFiles() {
     successfulOpensCounter += openFile(BLOCKS, getBlocksPath());
     successfulOpensCounter += openFile(INODES, getInodesPath());
     if(successfulOpensCounter == 0){
-        createFile(BLOCKS_BITMAP, getBlocksBitmapPath(), getMaxNumberOfBlocks());
-        createFile(INODES_BITMAP, getInodesBitmapPath(), getMaxNumberOfInodes());
+        createFile(BLOCKS_BITMAP, getBlocksBitmapPath(), getMaxNumberOfBlocks()/8);
+        createFile(INODES_BITMAP, getInodesBitmapPath(), getMaxNumberOfInodes()/8);
         createFile(BLOCKS, getBlocksPath(), getMaxNumberOfBlocks() * sizeOfBlock - 1);
         createFile(INODES, getInodesPath(), getMaxNumberOfInodes()* INode::sizeofInode - 1);
         INode root(0, 1, 0, 0, 0);

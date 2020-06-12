@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-SimpleFS::SimpleFS(std::string path) {
+SimpleFS::SimpleFS(std::string path){
     ResourceManager::initialize(path);
 }
 
@@ -29,7 +29,6 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
         return -1;
     }
     int freeInodeId = findFreeInode();
-    openInodes.emplace(Lock::WR_LOCK, freeInodeId);
     if(freeInodeId < 0) {
         while(!openInodes.empty())
             openInodes.pop();
@@ -44,6 +43,7 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
     }
     INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newFileName, newFile);
+    openInodes.emplace(Lock::WR_LOCK, freeInodeId);
     newFile.writeInode();
 
     while(!openInodes.empty())
@@ -202,7 +202,6 @@ int SimpleFS::mkdir(std::string && path) {
         return -1;
     INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
     targetDirINode.saveINodeInDirectory(newDirName, newDir);
-
     return 0;
 }
 
