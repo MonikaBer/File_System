@@ -1,26 +1,27 @@
 #include "SimpleFS.hpp"
+#include "simplefs.h"
 
-static SimpleFS simpleFS = SimpleFS("/etc/simplefs.config");
+static SimpleFS simpleFS = SimpleFS("../etc/simplefs.conf");
 
-extern "C" {
+//extern "C" {
     int create(char * name, int mode) {
         return simpleFS.create(name, mode);
     }
 
     int open(char * name, int mode) {
-        return simpleFS.open(name, mode);
+        return simpleFS._open(name, mode);
     }
 
     int read(int fd, char * buf, int len) { 
-       return simpleFS.read(fd, buf, len);
+       return simpleFS._read(fd, buf, len);
     }
 
     int write(int fd, char * buf, int len) {
-        return simpleFS.write(fd, buf, len);
+        return simpleFS._write(fd, buf, len);
     }
 
     int lseek(int fd, int whence, int offset) {
-        return simpleFS.lseek(fd, whence, offset);
+        return simpleFS._lseek(fd, whence, offset);
     }
 
     int unlink(char * name) {
@@ -34,4 +35,4 @@ extern "C" {
     int rmdir(char * name) {
         return simpleFS.rmdir(name);
     }
-}
+//}

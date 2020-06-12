@@ -36,3 +36,12 @@ build
 
 # Visual Studio Code
 .vscode
+
+# Kacper's clion artifacts
+cmake-build-debug
+.idea
+*.swp
+
+# whole filesystem is not copied to git
+etc/config/[^.]*
+tests/etc_test/config/[^.]*
