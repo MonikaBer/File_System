@@ -155,7 +155,7 @@ int SimpleFS::_lseek(int fd, int whence, int offset) {
         fdr.setFileCursor(inode->getLength() - 1 + offset);
     }
     else throw std::runtime_error("Wrong whence value");
-    return offset;
+    return fdr.getFileCursor();
 }
 
 
