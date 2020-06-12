@@ -197,6 +197,12 @@ int SimpleFS::mkdir(std::string && path) {
     } catch (...) {
         return -1;
     }
+    std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
+    if(dirContent.find(newDirName) != dirContent.end()) {
+        while(!openInodes.empty())
+            openInodes.pop();
+        return -1;
+    }
     int freeInodeId = findFreeInode();
     if(freeInodeId < 0)
         return -1;
