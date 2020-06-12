@@ -53,6 +53,7 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
 
 
 int SimpleFS::_open(std::string && path, int mode) {
+
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;
@@ -61,7 +62,11 @@ int SimpleFS::_open(std::string && path, int mode) {
     try{
         INode targetDirINode = getTargetDirectory(parsedPath);
         std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-        std::shared_ptr<INode> openINode = std::make_shared<INode>(dirContent.at(fileName));
+        int inodeId = dirContent.at(fileName);
+        for(int i=0; i<fd.size; i++)
+            if(fds[i].getInode()->getId() == inodeId)
+                return -1; //file is open
+        std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
 
         if (mode == 1)
             fds.emplace_back(openINode, Lock::WR_LOCK);
