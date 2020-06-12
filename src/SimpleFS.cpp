@@ -63,7 +63,7 @@ int SimpleFS::_open(std::string && path, int mode) {
         INode targetDirINode = getTargetDirectory(parsedPath);
         std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
         int inodeId = dirContent.at(fileName);
-        for(int i=0; i<fd.size(); i++)
+        for(int i=0; i<fds.size(); i++)
             if(fds[i].getInode()->getId() == inodeId)
                 return -1; //file is open
         std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
