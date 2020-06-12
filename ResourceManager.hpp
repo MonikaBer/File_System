@@ -43,9 +43,6 @@ public:
     int getMaxNumberOfInodes();
     int getMaxLengthOfName();
     int getSizeOfBlock();
-
-    unsigned getFreeBlock();
-    int freeBlock(unsigned block);
 };
 
 #endif

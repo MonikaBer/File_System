@@ -25,31 +25,38 @@ private:
     void loadInode(INode* en, int nodeId);
     void saveInode(const INode* en);
 
+    int addBlock(unsigned block);
+    int removeBlock();
+
+    unsigned getFreeBlock();
+    int freeBlock(unsigned block);
+
 public:
     static const int sizeofInode = sizeof(unsigned short) + sizeof(long) + 14 * sizeof(unsigned);
 
-    std::array<char, sizeofInode> serialize();
-
     // TODO public for testing
-    int freeAllBlocks();
+
     unsigned int getId() const;
 
     //methods declarations
     INode() = default;
-    INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock); //TODO: Change constructor
     INode(unsigned id); // reads inode from file
-    int addBlock(unsigned block);
-    int removeBlock();
-    unsigned getBlock(unsigned index) const;
+    INode(unsigned int id, unsigned short mode, long length, unsigned int numberOfBlocks, unsigned int indirectBlock); //TODO: Change constructor
+
     long getLength() const { return length; };
 
     int writeToFile(char* buffer, int size, long fileCursor);
     void saveINodeInDirectory(std::string newFileName, INode newFileInode);
 
+
     std::map<std::string, unsigned> getDirectoryContent();
     std::vector<char> getContent();
     int writeInode();
     unsigned short getMode();
+
+    unsigned getBlock(unsigned index) const;
+
+    int freeAllBlocks();
 };
 
 #endif

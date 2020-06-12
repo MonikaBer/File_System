@@ -220,7 +220,12 @@ int SimpleFS::rmdir(std::string && path) {
     }
 
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    unsigned dirToDeleteId = dirContent[dirToDelete]; // TODO LOCKI
+    unsigned dirToDeleteId;
+    try{
+        dirToDeleteId = dirContent.at(dirToDelete); // TODO LOCKI
+    } catch(...){
+        return -1;
+    }
     INode dirToDeleteINode(dirToDeleteId);
 
     if (dirToDeleteINode.getMode() == 0)  //it's file, not directory
