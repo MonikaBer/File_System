@@ -5,7 +5,8 @@
 Lock::Lock(Type type, unsigned int inodeId, int fsFileDescriptor, long startPosition, long length):
     type(type),
     inodeId(inodeId),
-    fileDescriptor(fsFileDescriptor)
+    fileDescriptor(fsFileDescriptor),
+    released(false)
 {
     if(type == WR_LOCK)
         fileLockDescription.l_type = F_WRLCK;
@@ -18,7 +19,6 @@ Lock::Lock(Type type, unsigned int inodeId, int fsFileDescriptor, long startPosi
     fileLockDescription.l_start = startPosition;
     fileLockDescription.l_len = length;
     execute();
-//    std::cout << "Created lock of: " << inodeId << std::endl;
 }
 
 Lock::Lock(Lock::Type type, unsigned int inodeId):
@@ -31,8 +31,11 @@ Lock::Lock(Lock::Type type, unsigned int inodeId):
 //}
 
 void Lock::release() {
+    if(released)
+        return;
     fileLockDescription.l_type = F_UNLCK;
     execute();
+    released = true;
 }
 
 void Lock::execute() {
@@ -42,5 +45,4 @@ void Lock::execute() {
 
 Lock::~Lock() {
     release();
-//    std::cout << "Released lock of: " << inodeId << std::endl;
 }

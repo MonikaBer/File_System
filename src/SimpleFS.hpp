@@ -14,7 +14,6 @@
 
 class SimpleFS {
 private:
-    std::stack<Lock> openInodes;
     std::vector<FileDescriptor> fds;
 
     std::vector<std::string> parseDirect(const std::string& path);

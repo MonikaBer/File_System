@@ -12,6 +12,7 @@ private:
     Type type;
     struct flock fileLockDescription;
     int fileDescriptor;
+    bool released;
 
     void execute();
 public:

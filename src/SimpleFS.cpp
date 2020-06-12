@@ -14,7 +14,6 @@ SimpleFS::SimpleFS(std::string path){
 }
 
 int SimpleFS::create(std::string && path, unsigned short mode) {
-    //std::stack<Lock> inodeLocks; //TODO: Locally?
     std::vector<std::string> parsedPath = parseDirect(path);
     if(parsedPath.empty())
         return -1;
@@ -24,30 +23,23 @@ int SimpleFS::create(std::string && path, unsigned short mode) {
     try{
         targetDirINode = getTargetDirectory(parsedPath);
     }catch(...){
-        while(!openInodes.empty())
-            openInodes.pop();
         return -1;
     }
     int freeInodeId = findFreeInode();
     if(freeInodeId < 0) {
-        while(!openInodes.empty())
-            openInodes.pop();
         return -1;
     }
 
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
     if(dirContent.find(newFileName) != dirContent.end()) {
-        while(!openInodes.empty())
-            openInodes.pop();
         return -1;
     }
-    INode newFile = INode(freeInodeId, mode, 0, 0, 0); //todo numberofblocks and indirectblock ????
+    INode newFile = INode(freeInodeId, mode, 0, 0, 0);
+    Lock currentLock = Lock(Lock::WR_LOCK,targetDirINode.getId());
     targetDirINode.saveINodeInDirectory(newFileName, newFile);
-    openInodes.emplace(Lock::WR_LOCK, freeInodeId);
+    currentLock = Lock(Lock::WR_LOCK,freeInodeId);
     newFile.writeInode();
-
-    while(!openInodes.empty())
-        openInodes.pop();
+    currentLock.release();
     return 0;
 }
 
@@ -67,7 +59,9 @@ int SimpleFS::_open(std::string && path, int mode) {
             if(fds[i].getInode()->getId() == inodeId)
                 return -1; //file is open
         std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
-
+        Lock currentLock = Lock(Lock::WR_LOCK, inodeId);
+        std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
+        currentLock.release();
         if (mode == 1)
             fds.emplace_back(openINode, Lock::WR_LOCK);
         else
@@ -101,7 +95,6 @@ int SimpleFS::_read(int fd, char * buf, int len) {
     // if trying to read more than left in file, cut len so it stops on end of file
     if (len + cursor > inode->getLength())
         len = inode->getLength() - cursor;
-
     int blockSize = ResourceManager::getInstance()->getSizeOfBlock();
     while (len) {
         // calculate host file offset
@@ -115,8 +108,10 @@ int SimpleFS::_read(int fd, char * buf, int len) {
         if (blockOffset + len > blockSize)
             singleRead = blockSize - blockOffset;
 
+        Lock currentLock = Lock(Lock::RD_LOCK, inode->getId(), blocksFile, host_file_offset, singleRead);
         lseek(blocksFile, host_file_offset, SEEK_SET);
         read(blocksFile, buf+totalRead, singleRead);
+        currentLock.release();
 
         totalRead += singleRead;
         cursor += singleRead;
@@ -212,7 +207,7 @@ int SimpleFS::mkdir(std::string && path) {
     int freeInodeId = findFreeInode();
     if(freeInodeId < 0)
         return -1;
-    INode newDir = INode(freeInodeId, 1, 0, 0, 0); //todo numberofblocks and indirectblock ????
+    INode newDir = INode(freeInodeId, 1, 0, 0, 0);
     targetDirINode.saveINodeInDirectory(newDirName, newDir);
     return 0;
 }
@@ -239,7 +234,9 @@ int SimpleFS::rmdir(std::string && path) {
     }catch(std::out_of_range& e){
         return -1;
     }
+    Lock currentLock = Lock(Lock::RD_LOCK, dirToDeleteId);
     INode dirToDeleteINode(dirToDeleteId);
+    currentLock.release();
 
     if (dirToDeleteINode.getMode() == 0)  //it's file, not directory
         return -2;
@@ -258,12 +255,12 @@ int SimpleFS::rmdir(std::string && path) {
 }
 
 INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {
-    openInodes.emplace(Lock::RD_LOCK, 0);
+    Lock currentLock = Lock(Lock::RD_LOCK, 0);
     INode inode = INode(0);
     for(const auto & fileName : path){
         std::map<std::string, unsigned> dir = inode.getDirectoryContent();
         int targetInodeNumber = dir.at(fileName);
-        openInodes.emplace(Lock::RD_LOCK, targetInodeNumber);
+        currentLock = Lock(Lock::RD_LOCK, targetInodeNumber);
         inode = INode(targetInodeNumber);
     }
     return inode;
@@ -322,12 +319,12 @@ int SimpleFS::findFreeInode() {
  */
 int SimpleFS::clearInode(unsigned inode) {
     int bitmapfs = ResourceManager::getInstance()->getInodesBitmap();
+    Lock currentLock = Lock(Lock::WR_LOCK, inode, bitmapfs, inode/8, 1);
     lseek(bitmapfs, inode/8, SEEK_SET);
     char byte;
     read(bitmapfs, &byte, 1);
     byte &= ~(1 << (inode%8));
     lseek(bitmapfs, inode/8, SEEK_SET);
     write(bitmapfs, &byte, 1);
-
-    // TODO return errors ( + doc)
+    currentLock.release();
 }

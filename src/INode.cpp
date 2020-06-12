@@ -4,6 +4,7 @@
 
 #include "INode.hpp"
 #include <unistd.h>
+#include "Lock.hpp"
 
 void INode::loadInode(INode* en, int inodeId){
     int inodesFileDescriptor = ResourceManager::getInstance()->getInodes();
@@ -69,13 +70,15 @@ int INode::removeBlock() {
     else {
         int blocksFile = ResourceManager::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 13) * sizeof(unsigned);
+        Lock currentLock = Lock(Lock::RD_LOCK, getId(), blocksFile, host_file_offset, sizeof(unsigned));
         lseek(blocksFile, host_file_offset, SEEK_SET);
         unsigned block;
         read(blocksFile, (char*)&block, sizeof(unsigned));
+        currentLock.release();
         freeBlock(block);
         if (number_of_blocks == 13) {
             freeBlock(indirect_block);
-            indirect_block = 0;     // TODO Artur zwolnij z tego locka czy cos nie znam sie XD
+            indirect_block = 0;
         }
     }
     number_of_blocks--;
@@ -134,8 +137,6 @@ unsigned int INode::getId() const {
 
 void INode::saveINodeInDirectory(std::string newFileName, INode newFileInode) {
     addFileToDirectory(newFileName, newFileInode);
-    ResourceManager * config = ResourceManager::getInstance();
-    saveInode(&newFileInode);
 }
 
 void INode::addFileToDirectory(std::string newFileName, INode inode) {
@@ -159,10 +160,12 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     }
     newFileName.resize(loader->getMaxLengthOfName(), 0);
     unsigned inodeId = inode.getId();
+    Lock currentLock = Lock(Lock::WR_LOCK, inodeId, blocksFd, blockAddress*loader->getSizeOfBlock()+positionInBlock, loader->getMaxLengthOfName() + sizeof(inodeId));
     lseek(blocksFd, blockAddress*loader->getSizeOfBlock()+positionInBlock, SEEK_SET);
     write(blocksFd, newFileName.c_str(), loader->getMaxLengthOfName());
     write(blocksFd, (char*)&(inodeId), sizeof(inodeId));
     length += loader->getMaxLengthOfName() + sizeof(inodeId);
+    currentLock.release();
     writeInode();
 }
 
@@ -236,9 +239,10 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
             } else
                 throw e;
         }
-        lseek(blocks_stream, blockAddress*sizeOfBlock+positionInBlock, SEEK_SET);
         int remainingSizeOfBlock = sizeOfBlock-positionInBlock;
-        if (remainingSizeOfBlock<=size){ //TODO Check equals
+        Lock currentLock = Lock(Lock::RD_LOCK, getId(), blocks_stream, blockAddress*sizeOfBlock+positionInBlock, remainingSizeOfBlock);
+        lseek(blocks_stream, blockAddress*sizeOfBlock+positionInBlock, SEEK_SET);
+        if (remainingSizeOfBlock<=size){
             write(blocks_stream, buffer + saved, remainingSizeOfBlock);
             saved += remainingSizeOfBlock;
             size -= remainingSizeOfBlock;
@@ -248,6 +252,7 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
             saved += size;
             size = 0;
         }
+        currentLock.release();
         positionInBlock=0;
     }
     if (fileCursor + saved > length)
@@ -280,7 +285,9 @@ unsigned INode::getFreeBlock() {
     unsigned char byte;
     bool looking = true;
     while (looking) {
+        Lock currentLock = Lock(Lock::RD_LOCK, getId(), bitmapfs, lseek(bitmapfs, 0, SEEK_CUR), 1);
         read(bitmapfs, (char*)&byte, 1);
+        currentLock.release();
         if(byte == EOF)
             throw std::runtime_error("Couldn't find free block");
         if (byte == 255) {    // all blocks taken
@@ -296,8 +303,10 @@ unsigned INode::getFreeBlock() {
         }
     }
     byte |= 1 << (block%8);
+    Lock currentLock = Lock(Lock::RD_LOCK, getId(), bitmapfs, lseek(bitmapfs, -1, SEEK_CUR), 1);
     lseek(bitmapfs, -1, SEEK_CUR);
     write(bitmapfs, (char*)&byte, 1);
+    currentLock.release();
     return block;
 }
 
@@ -310,17 +319,16 @@ unsigned INode::getFreeBlock() {
  * @return
  */
 int INode::freeBlock(unsigned int block) {
-    // TODO in any way doesnt check who is the owner of this block! - should it be changed?
-    // TODO should data be cleared?
-    // TODO return values + doc
     if (block == 0) {   // never free root block!
         return -1;
     }
     int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
+    Lock currentLock = Lock(Lock::WR_LOCK, getId(), bitmapfs, block/8, 1);
     lseek(bitmapfs, block/8, SEEK_SET);
     char byte;
     read(bitmapfs, &byte, 1);
     byte &= ~(1 << (block%8));
     lseek(bitmapfs, block/8, SEEK_SET);
     write(bitmapfs, &byte, 1);
+    currentLock.release();
 }
