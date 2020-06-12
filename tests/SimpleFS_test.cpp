@@ -33,8 +33,8 @@ BOOST_AUTO_TEST_SUITE(SimpleFS_test)
     }
 
     BOOST_AUTO_TEST_CASE(OpenWriteLockedFile){
-        fs.create("/new_file", 0);
-        BOOST_CHECK_EQUAL(fs._open("/new_file", 1), 0);
+        if(fs.create("/new_file", 0) == 0);
+            BOOST_CHECK(fs._open("/new_file", 1) >= 0);
         BOOST_CHECK_EQUAL(fs._open("/new_file", 1), -1);
     }
 
@@ -101,15 +101,18 @@ BOOST_AUTO_TEST_SUITE(SimpleFS_test)
     BOOST_AUTO_TEST_CASE(TooMuchFiles){
         std::string name = "./namex";
         int i = 0;
-        for(; i<10; ++i){
+        for(; i<40; ++i){
             name[7] = i;
-            fs.create(std::string(name), 0);
+            if(fs.create(std::string(name), 0) < 0)
+                break;
         }
+        BOOST_CHECK(i <= 16);
         BOOST_CHECK_EQUAL(fs.create("/another_one", 0), -1);
+        for(; i>=0; --i){
+            name[7] = i;
+            fs.unlink(std::string(name));
+        }
     }
-
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
