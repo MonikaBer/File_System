@@ -181,6 +181,7 @@ int SimpleFS::unlink(std::string && name) {
     INode inodeToDelete(iNodeToDeleteId);
     inodeToDelete.freeAllBlocks();
     clearInode(inodeToDelete.getId()); // TODO locks
+    targetDirINode.removeFileFromDirectory(inodeToDelete);
     return 0;
 }
 
@@ -246,6 +247,7 @@ int SimpleFS::rmdir(std::string && path) {
     //dirToDelete is empty, so delete it
     dirToDeleteINode.freeAllBlocks();                //clear data blocks
     clearInode(dirToDeleteINode.getId());            //clear inode in bitmap     // TODO locks
+    targetDirINode.removeFileFromDirectory(dirToDeleteINode);
 
     return 0;
 }

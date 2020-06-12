@@ -29,5 +29,4 @@ void testWrongPath(){
 
 int main() {
     testWrongPath();
-    return 0;
 }

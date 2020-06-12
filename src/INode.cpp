@@ -166,6 +166,33 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     writeInode();
 }
 
+void INode::removeFileFromDirectory(INode inode) {
+    ResourceManager* loader = ResourceManager::getInstance();
+    int blocksFd = loader->getBlocks();
+    unsigned positionInBlock = inode.getId()%loader->getSizeOfBlock();
+    unsigned blockId = inode.getId()/loader->getSizeOfBlock();
+    int blockAddress;
+    try {
+        blockAddress = getBlock(blockId);
+    }
+    catch(std::runtime_error e){
+        if(strcmp(e.what(), "Block of that index uninitialized") == 0) {
+            unsigned freeBlock = getFreeBlock();
+            addBlock(freeBlock);
+            blockAddress = freeBlock;
+        } else
+            throw e;
+    }
+    std::string emptyName = "";
+    emptyName.resize(loader->getMaxLengthOfName(), 0);
+    unsigned nullId = 0;
+    lseek(blocksFd, blockAddress*loader->getSizeOfBlock()+positionInBlock-1, SEEK_SET);
+    write(blocksFd, emptyName.c_str(), loader->getMaxLengthOfName());
+    write(blocksFd, (char*)&(nullId), sizeof(nullId));
+    length -= loader->getMaxLengthOfName() + sizeof(nullId);
+    writeInode();
+}
+
 
 /**
  * Saves INode to file and sets bit in bitmap to inform that INode is in use.

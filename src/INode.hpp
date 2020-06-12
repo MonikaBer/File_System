@@ -57,6 +57,8 @@ public:
     unsigned getBlock(unsigned index) const;
 
     int freeAllBlocks();
+
+    void removeFileFromDirectory(INode inode);
 };
 
 #endif
