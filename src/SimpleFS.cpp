@@ -58,7 +58,6 @@ int SimpleFS::_open(std::string && path, int mode) {
         for(int i=0; i<fds.size(); i++)
             if(fds[i].getInode()->getId() == inodeId)
                 return -1; //file is open
-        std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
         Lock currentLock = Lock(Lock::WR_LOCK, inodeId);
         std::shared_ptr<INode> openINode = std::make_shared<INode>(inodeId);
         currentLock.release();
@@ -200,8 +199,6 @@ int SimpleFS::mkdir(std::string && path) {
     }
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
     if(dirContent.find(newDirName) != dirContent.end()) {
-        while(!openInodes.empty())
-            openInodes.pop();
         return -1;
     }
     int freeInodeId = findFreeInode();
