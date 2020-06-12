@@ -21,7 +21,13 @@ void testWrite() {
     std::cout << read_buff << std::endl;
 }
 
+void testWrongPath(){
+    create("/dir", 1);
+    std::cout<<create("/dir/abc/test", 0);
+    std::cout<<open("/dir/abc/test", 1);
+}
+
 int main() {
-    testWrite();
+    testWrongPath();
     return 0;
 }

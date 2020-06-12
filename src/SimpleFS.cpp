@@ -170,7 +170,12 @@ int SimpleFS::unlink(std::string && name) {
         return -1;
     }
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    unsigned iNodeToDeleteId = dirContent[fileToDelete]; // TODO LOCKI
+    unsigned iNodeToDeleteId;
+    try {
+        iNodeToDeleteId = dirContent.at(fileToDelete); // TODO LOCKI
+    }catch(std::out_of_range& e){
+        return -1;
+    }
     INode inodeToDelete(iNodeToDeleteId);
     inodeToDelete.freeAllBlocks();
     clearInode(inodeToDelete.getId()); // TODO locks
@@ -215,7 +220,12 @@ int SimpleFS::rmdir(std::string && path) {
     }
 
     std::map<std::string, unsigned> dirContent = targetDirINode.getDirectoryContent();
-    unsigned dirToDeleteId = dirContent[dirToDelete]; // TODO LOCKI
+    unsigned dirToDeleteId;
+    try {
+        dirToDeleteId = dirContent.at(dirToDelete); // TODO LOCKI
+    }catch(std::out_of_range& e){
+        return -1;
+    }
     INode dirToDeleteINode(dirToDeleteId);
 
     if (dirToDeleteINode.getMode() == 0)  //it's file, not directory
@@ -238,7 +248,7 @@ INode SimpleFS::getTargetDirectory(const std::vector<std::string> &path) {
     INode inode = INode(0);
     for(const auto & fileName : path){
         std::map<std::string, unsigned> dir = inode.getDirectoryContent();
-        int targetInodeNumber = dir[fileName];
+        int targetInodeNumber = dir.at(fileName);
         openInodes.emplace(Lock::RD_LOCK, targetInodeNumber);
         inode = INode(targetInodeNumber);
     }
@@ -277,11 +287,7 @@ int SimpleFS::findFreeInode() {
             break;
         free_inode_byte++;
     }
-<<<<<<< HEAD:src/SimpleFS.cpp
-    if(free_inode_byte == 0xFF)
-=======
     if((unsigned char)line[free_inode_byte] == 0xFF)
->>>>>>> configLoader:SimpleFS.cpp
         return -1;
     char byteWithFreeINode = line[free_inode_byte];
     unsigned int id = 0;
