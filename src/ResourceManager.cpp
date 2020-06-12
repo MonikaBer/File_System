@@ -122,8 +122,8 @@ int ResourceManager::processSystemFiles() {
     successfulOpensCounter += openFile(BLOCKS, getBlocksPath());
     successfulOpensCounter += openFile(INODES, getInodesPath());
     if(successfulOpensCounter == 0){
-        createFile(BLOCKS_BITMAP, getBlocksBitmapPath(), getMaxNumberOfBlocks());
-        createFile(INODES_BITMAP, getInodesBitmapPath(), getMaxNumberOfInodes());
+        createFile(BLOCKS_BITMAP, getBlocksBitmapPath(), getMaxNumberOfBlocks()/8);
+        createFile(INODES_BITMAP, getInodesBitmapPath(), getMaxNumberOfInodes()/8);
         createFile(BLOCKS, getBlocksPath(), getMaxNumberOfBlocks() * sizeOfBlock - 1);
         createFile(INODES, getInodesPath(), getMaxNumberOfInodes()* INode::sizeofInode - 1);
         INode root(0, 1, 0, 0, 0);
@@ -148,62 +148,3 @@ void ResourceManager::createFile(ResourceManager::FdNames type, const std::strin
     ftruncate(fileDescriptor, initialSize);
     hostFd[type] = fileDescriptor;
 }
-
-/**
- * Allows to take ownership of unowned block.
- *
- * @return 0 - no free blocks found
- * @return positive number - block number
- */
-unsigned ResourceManager::getFreeBlock() {
-    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
-    unsigned block = 0;
-    unsigned char byte;
-    bool looking = true;
-    while (looking) {
-        read(bitmapfs, (char*)&byte, 1);
-        if(byte == EOF)
-            throw std::runtime_error("Couldn't find free block");
-        if (byte == 255) {    // all blocks taken
-            block += 8;
-            continue;
-        }
-        for (int i = 0; i < 8; i++) {
-            if ( ((byte >> i) & 0x1) == 0) {
-                looking = false;
-                break;
-            }
-            block++;
-        }
-    }
-    byte |= 1 << (block%8);
-    lseek(bitmapfs, -1, SEEK_CUR);
-    write(bitmapfs, (char*)&byte, 1);
-    return block;
-}
-
-/**
- * Allows to renounce ownership of block
- *
- * WARNING: data is not erased!
- *
- * @param block - block number
- * @return
- */
-int ResourceManager::freeBlock(unsigned int block) {
-    // TODO in any way doesnt check who is the owner of this block! - should it be changed?
-    // TODO should data be cleared?
-    // TODO return values + doc
-    if (block == 0) {   // never free root block!
-        return -1;
-    }
-    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
-    lseek(bitmapfs, block/8, SEEK_SET);
-    char byte;
-    read(bitmapfs, &byte, 1);
-    byte &= ~(1 << (block%8));
-    lseek(bitmapfs, block/8, SEEK_SET);
-    write(bitmapfs, &byte, 1);
-}
-
-// TODO iNode in indirect block expects value 0 to find its end! either add blockscount, clear block after freeing or clear next 4 bytes after assinging new block

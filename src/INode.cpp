@@ -50,7 +50,7 @@ int INode::addBlock(unsigned int block) {
     }
     else {
         if (indirect_block == 0) {
-            indirect_block = ResourceManager::getInstance()->getFreeBlock();  // TODO Artur olockuj to jakos xD
+            indirect_block = getFreeBlock();  // TODO Artur olockuj to jakos xD
         }
         int blocksFile = ResourceManager::getInstance()->getBlocks();
         unsigned long host_file_offset = indirect_block * 4096 + (number_of_blocks - 12) * sizeof(unsigned);
@@ -63,7 +63,7 @@ int INode::addBlock(unsigned int block) {
 
 int INode::removeBlock() {
     if(number_of_blocks <= 12) {
-        ResourceManager::getInstance()->freeBlock(blocks[number_of_blocks - 1]);
+        freeBlock(blocks[number_of_blocks - 1]);
         blocks[number_of_blocks - 1] = 0;
     }
     else {
@@ -72,9 +72,9 @@ int INode::removeBlock() {
         lseek(blocksFile, host_file_offset, SEEK_SET);
         unsigned block;
         read(blocksFile, (char*)&block, sizeof(unsigned));
-        ResourceManager::getInstance()->freeBlock(block);
+        freeBlock(block);
         if (number_of_blocks == 13) {
-            ResourceManager::getInstance()->freeBlock(indirect_block);
+            freeBlock(indirect_block);
             indirect_block = 0;     // TODO Artur zwolnij z tego locka czy cos nie znam sie XD
         }
     }
@@ -138,29 +138,6 @@ void INode::saveINodeInDirectory(std::string newFileName, INode newFileInode) {
     saveInode(&newFileInode);
 }
 
-std::array<char, INode::sizeofInode> INode::serialize() {
-    std::array<char, sizeofInode> INodeBytes = {0};
-    int i = 0;
-
-    for(; i<sizeof(mode); ++i)
-        INodeBytes[i] = (mode >> (i * 8));
-
-    for(int k=0; i<sizeof(length); ++i, ++k)
-        INodeBytes[i] = (length >> (k * 8));
-
-    for(int k=0; i<sizeof(number_of_blocks); ++i, ++k)
-        INodeBytes[i] = (number_of_blocks >> (k * 8));
-
-    for(auto & block : blocks)
-        for(int k =0; i<sizeof(block); ++i, ++k)
-            INodeBytes[i] = (block >> (k * 8));
-
-    for(int k =0; i<sizeof(indirect_block); ++i, ++k)
-        INodeBytes[i] = (indirect_block >> (k * 8));
-
-    return INodeBytes;
-}
-
 void INode::addFileToDirectory(std::string newFileName, INode inode) {
     ResourceManager* loader = ResourceManager::getInstance();
     if(newFileName.size() > loader->getMaxLengthOfName())
@@ -174,7 +151,7 @@ void INode::addFileToDirectory(std::string newFileName, INode inode) {
     }
     catch(std::runtime_error e){
         if(strcmp(e.what(), "Block of that index uninitialized") == 0) {
-            unsigned freeBlock = loader->getFreeBlock();
+            unsigned freeBlock = getFreeBlock();
             addBlock(freeBlock);
             blockAddress = freeBlock;
         } else
@@ -226,7 +203,7 @@ int INode::writeToFile(char *buffer, int size, long fileCursor) {
         }
         catch(std::runtime_error e) {
             if(strcmp(e.what(), "Block of that index uninitialized") == 0) {
-                unsigned freeBlock = config->getFreeBlock();
+                unsigned freeBlock = getFreeBlock();
                 addBlock(freeBlock);
                 blockAddress = freeBlock;
             } else
@@ -262,4 +239,61 @@ unsigned INode::getBlock(unsigned index) const {
 
 unsigned short INode::getMode() {
     return this->mode;
+}
+
+/**
+ * Allows to take ownership of unowned block.
+ *
+ * @return 0 - no free blocks found
+ * @return positive number - block number
+ */
+unsigned INode::getFreeBlock() {
+    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
+    unsigned block = 0;
+    unsigned char byte;
+    bool looking = true;
+    while (looking) {
+        read(bitmapfs, (char*)&byte, 1);
+        if(byte == EOF)
+            throw std::runtime_error("Couldn't find free block");
+        if (byte == 255) {    // all blocks taken
+            block += 8;
+            continue;
+        }
+        for (int i = 0; i < 8; i++) {
+            if ( ((byte >> i) & 0x1) == 0) {
+                looking = false;
+                break;
+            }
+            block++;
+        }
+    }
+    byte |= 1 << (block%8);
+    lseek(bitmapfs, -1, SEEK_CUR);
+    write(bitmapfs, (char*)&byte, 1);
+    return block;
+}
+
+/**
+ * Allows to renounce ownership of block
+ *
+ * WARNING: data is not erased!
+ *
+ * @param block - block number
+ * @return
+ */
+int INode::freeBlock(unsigned int block) {
+    // TODO in any way doesnt check who is the owner of this block! - should it be changed?
+    // TODO should data be cleared?
+    // TODO return values + doc
+    if (block == 0) {   // never free root block!
+        return -1;
+    }
+    int bitmapfs = ResourceManager::getInstance()->getBlocksBitmap();
+    lseek(bitmapfs, block/8, SEEK_SET);
+    char byte;
+    read(bitmapfs, &byte, 1);
+    byte &= ~(1 << (block%8));
+    lseek(bitmapfs, block/8, SEEK_SET);
+    write(bitmapfs, &byte, 1);
 }

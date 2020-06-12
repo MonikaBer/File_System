@@ -4,20 +4,20 @@
 #include "simplefs.h"
 
 void testWrite() {
-    create("/test", 1);
-    create("/testDwa", 1);
-    create("/testTrzy", 1);
-    int fd = open("/testDwa", 1);
+    simplefs_creat("/test", 1);
+    simplefs_creat("/testDwa", 1);
+    simplefs_creat("/testTrzy", 1);
+    int fd = simplefs_open("/testDwa", 1);
     std::cout << "fd testDwa: " << fd << std::endl;
-    fd = open("/test", 1);
+    fd = simplefs_open("/test", 1);
     std::cout << "fd test: " << fd << std::endl;
-    fd = open("/testTrzy", 1);
+    fd = simplefs_open("/testTrzy", 1);
     std::cout << "fd testTrzy: " << fd << std::endl;
     char *text = "WIELKI TEST";
     char read_buff[11];
-    write(2, text, 11);
-    lseek(2, 0, 0);
-    read(2, read_buff, 11);
+    simplefs_write(2, text, 11);
+    simplefs_lseek(2, 0, 0);
+    simplefs_read(2, read_buff, 11);
     std::cout << read_buff << std::endl;
 }
 
