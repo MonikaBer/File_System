@@ -83,6 +83,8 @@ int SimpleFS::_open(std::string && path, int mode) {
 int SimpleFS::_read(int fd, char * buf, int len) {
     if ( fd >= fds.size() )
         return -1;
+    if(len < 0)
+        return -1;
 
     FileDescriptor &fdr = fds[fd];
     unsigned cursor = fdr.getFileCursor();
@@ -122,7 +124,7 @@ int SimpleFS::_read(int fd, char * buf, int len) {
 
 int SimpleFS::_write(int fd, char * buf, int len) {
     FileDescriptor descriptor = fds[fd];
-    descriptor.writeToInode(buf, len);
+    return descriptor.writeToInode(buf, len);
 }
 
 

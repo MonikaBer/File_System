@@ -17,7 +17,7 @@ public:
     //methods declarations
     FileDescriptor(std::shared_ptr<INode> inode, Lock::Type type) : inode(std::move(inode)), lockType(type), fileCursor(0) {}
 
-    void writeToInode(char *buffer, int len);
+    int writeToInode(char *buffer, int len);
     std::shared_ptr<INode> getInode() { return inode; }
     long getFileCursor() const { return fileCursor; }
     Lock::Type getLockType() const { return lockType; }
